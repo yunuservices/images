@@ -5,13 +5,13 @@ RUN set -eux; \
       apt-get install -y --no-install-recommends ca-certificates git tar findutils build-essential autoconf automake libtool pkg-config cmake; \
       rm -rf /var/lib/apt/lists/*; \
     elif command -v dnf >/dev/null 2>&1; then \
-      dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
+      dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake3 || dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
       dnf clean all; \
     elif command -v yum >/dev/null 2>&1; then \
-      yum install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconfig cmake; \
+      yum install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconfig cmake3 || yum install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconfig cmake; \
       yum clean all; \
     elif command -v microdnf >/dev/null 2>&1; then \
-      microdnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
+      microdnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake3 || microdnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
       microdnf clean all; \
     elif command -v apk >/dev/null 2>&1; then \
       apk add --no-cache ca-certificates git tar findutils build-base autoconf automake libtool pkgconf cmake; \
@@ -112,4 +112,6 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 CMD ["/bin/sh", "/entrypoint.sh"]
+
+
 
