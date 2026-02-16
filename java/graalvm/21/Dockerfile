@@ -75,7 +75,7 @@ RUN set -eux; \
     cp "$MIMALLOC_LIB" /out/libmimalloc.so
 
 FROM container-registry.oracle.com/graalvm/jdk:21
-MAINTAINER "yunuservices"
+LABEL org.opencontainers.image.authors="yunuservices"
 
 COPY ./entrypoint.sh /entrypoint.sh
 COPY --from=allocator-builder /out/libjemalloc.so /usr/local/lib/libjemalloc.so
@@ -113,7 +113,6 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 CMD ["/bin/sh", "/entrypoint.sh"]
-
 
 
 
