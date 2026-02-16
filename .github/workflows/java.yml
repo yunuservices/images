@@ -47,8 +47,10 @@ jobs:
             version: "25"
           - vendor: graalvm
             version: "21"
+            platforms: "linux/amd64"
           - vendor: graalvm
             version: "25"
+            platforms: "linux/amd64"
 
     steps:
       - name: Checkout
@@ -73,7 +75,7 @@ jobs:
         with:
           context: ./java
           file: ./java/${{ matrix.vendor }}/${{ matrix.version }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platforms || 'linux/amd64,linux/arm64' }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/images:java_${{ matrix.vendor }}_${{ matrix.version }}

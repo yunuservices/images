@@ -55,7 +55,7 @@ RUN set -eux; \
     cp "$JEMALLOC_LIB" /out/libjemalloc.so; \
     MIMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"; \
     if [ -z "$MIMALLOC_LIB" ]; then \
-      git clone --depth 1 https://github.com/microsoft/mimalloc.git /tmp/mimalloc; \
+      git clone --depth 1 --branch v2.1.2 https://github.com/microsoft/mimalloc.git /tmp/mimalloc; \
       cd /tmp/mimalloc; \
       make -j"$CPU_COUNT" || true; \
       MIMALLOC_LIB="$(find /tmp/mimalloc -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"; \
@@ -112,6 +112,7 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 CMD ["/bin/sh", "/entrypoint.sh"]
+
 
 
 
