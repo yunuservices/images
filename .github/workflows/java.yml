@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    name: "java_${{ matrix.vendor }}_${{ matrix.version }}"
+    name: "${{ matrix.vendor }}_${{ matrix.version }}"
     runs-on: ubuntu-latest
     permissions:
       contents: read
