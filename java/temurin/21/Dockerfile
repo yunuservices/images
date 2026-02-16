@@ -3,19 +3,19 @@ FROM eclipse-temurin:21 AS allocator-builder
 RUN set -eux; \
     if command -v apt-get >/dev/null 2>&1; then \
       apt-get update; \
-      apt-get install -y --no-install-recommends ca-certificates curl git tar findutils build-essential autoconf automake libtool pkg-config cmake; \
+      apt-get install -y --no-install-recommends ca-certificates git tar findutils build-essential autoconf automake libtool pkg-config cmake; \
       rm -rf /var/lib/apt/lists/*; \
     elif command -v dnf >/dev/null 2>&1; then \
-      dnf install -y ca-certificates curl git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
+      dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
       dnf clean all; \
     elif command -v yum >/dev/null 2>&1; then \
-      yum install -y ca-certificates curl git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconfig cmake; \
+      yum install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconfig cmake; \
       yum clean all; \
     elif command -v microdnf >/dev/null 2>&1; then \
-      microdnf install -y ca-certificates curl git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
+      microdnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool pkgconf-pkg-config cmake; \
       microdnf clean all; \
     elif command -v apk >/dev/null 2>&1; then \
-      apk add --no-cache ca-certificates curl git tar findutils build-base autoconf automake libtool pkgconf cmake; \
+      apk add --no-cache ca-certificates git tar findutils build-base autoconf automake libtool pkgconf cmake; \
     fi
 
 RUN set -eux; \
@@ -29,8 +29,11 @@ RUN set -eux; \
     [ -n "$JEMALLOC_LIB" ] || { echo 'failed to build jemalloc shared library'; exit 1; }; \
     cp "$JEMALLOC_LIB" /out/libjemalloc.so; \
     git clone --depth 1 https://github.com/microsoft/mimalloc.git /tmp/mimalloc; \
-    cmake -S /tmp/mimalloc -B /tmp/mimalloc/build -DMI_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release; \
-    cmake --build /tmp/mimalloc/build --config Release -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc || echo 1)"; \
+    mkdir -p /tmp/mimalloc/build; \
+    cd /tmp/mimalloc/build; \
+    cmake .. -DMI_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release; \
+    cmake --build . --config Release -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc || echo 1)"; \
+    cd /; \
     MIMALLOC_LIB="$(find /tmp/mimalloc /usr/local/lib /usr/lib /lib -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"; \
     [ -n "$MIMALLOC_LIB" ] || { echo 'failed to build mimalloc shared library'; exit 1; }; \
     cp "$MIMALLOC_LIB" /out/libmimalloc.so
@@ -45,19 +48,19 @@ COPY --from=allocator-builder /out/libmimalloc.so /usr/local/lib/libmimalloc.so
 RUN set -eux; \
     if command -v apt-get >/dev/null 2>&1; then \
       apt-get update; \
-      apt-get install -y --no-install-recommends lsof curl ca-certificates openssl git tar sqlite3 fontconfig libfreetype6 tzdata iproute2 numactl libnuma1 libstdc++6 passwd graphviz libjemalloc-dev; \
+      apt-get install -y --no-install-recommends lsof ca-certificates openssl git tar sqlite3 fontconfig libfreetype6 tzdata iproute2 numactl libnuma1 libstdc++6 passwd graphviz libjemalloc-dev; \
       rm -rf /var/lib/apt/lists/*; \
     elif command -v dnf >/dev/null 2>&1; then \
-      dnf install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || dnf install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
+      dnf install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || dnf install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
       dnf clean all; \
     elif command -v yum >/dev/null 2>&1; then \
-      yum install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || yum install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
+      yum install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || yum install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
       yum clean all; \
     elif command -v microdnf >/dev/null 2>&1; then \
-      microdnf install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || microdnf install -y lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
+      microdnf install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils graphviz jemalloc-devel || microdnf install -y lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute numactl libstdc++ shadow-utils; \
       microdnf clean all; \
     elif command -v apk >/dev/null 2>&1; then \
-      apk add --no-cache lsof curl ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute2 numactl libstdc++ shadow; \
+      apk add --no-cache lsof ca-certificates openssl git tar sqlite fontconfig freetype tzdata iproute2 numactl libstdc++ shadow; \
     fi; \
     if command -v ldconfig >/dev/null 2>&1; then ldconfig || true; fi; \
     mkdir -p /home/container; \
