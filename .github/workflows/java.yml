@@ -37,10 +37,6 @@ jobs:
             version: "21"
           - vendor: liberica
             version: "25"
-          - vendor: microsoft
-            version: "21"
-          - vendor: microsoft
-            version: "25"
           - vendor: temurin
             version: "21"
           - vendor: temurin

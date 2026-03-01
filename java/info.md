@@ -5,7 +5,6 @@
 - `corretto`: `21`, `25`
 - `zulu`: `21`, `25`
 - `liberica`: `21`, `25`
-- `microsoft`: `21`, `25`
 - `temurin`: `21`, `25`
 - `graalvm`: `21`, `25`
 
