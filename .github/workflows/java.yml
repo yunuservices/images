@@ -26,21 +26,39 @@ jobs:
       matrix:
         include:
           - vendor: corretto
+            version: "17"
+          - vendor: corretto
             version: "21"
           - vendor: corretto
             version: "25"
+          - vendor: corretto
+            version: "26"
+          - vendor: zulu
+            version: "17"
           - vendor: zulu
             version: "21"
           - vendor: zulu
             version: "25"
+          - vendor: zulu
+            version: "26"
+          - vendor: liberica
+            version: "17"
           - vendor: liberica
             version: "21"
           - vendor: liberica
             version: "25"
+          - vendor: liberica
+            version: "26"
+          - vendor: temurin
+            version: "17"
           - vendor: temurin
             version: "21"
           - vendor: temurin
             version: "25"
+          - vendor: temurin
+            version: "26"
+          - vendor: graalvm
+            version: "17"
           - vendor: graalvm
             version: "21"
           - vendor: graalvm

@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25 AS allocator-builder
+FROM eclipse-temurin:25-jdk-noble AS allocator-builder
 
 RUN set -eux; \
     if command -v apt-get >/dev/null 2>&1; then \
@@ -74,7 +74,7 @@ RUN set -eux; \
     [ -n "$MIMALLOC_LIB" ] || { echo "failed to resolve mimalloc shared library"; exit 1; }; \
     cp "$MIMALLOC_LIB" /out/libmimalloc.so
 
-FROM eclipse-temurin:25
+FROM eclipse-temurin:25-jdk-noble
 LABEL org.opencontainers.image.authors="yunuservices"
 
 COPY ./entrypoint.sh /entrypoint.sh

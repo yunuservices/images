@@ -1,5 +1,4 @@
-FROM eclipse-temurin:21-jdk-noble AS allocator-builder
-
+FROM bellsoft/liberica-openjdk-debian:26 AS allocator-builder
 RUN set -eux; \
     if command -v apt-get >/dev/null 2>&1; then \
       apt-get update; \
@@ -74,7 +73,7 @@ RUN set -eux; \
     [ -n "$MIMALLOC_LIB" ] || { echo "failed to resolve mimalloc shared library"; exit 1; }; \
     cp "$MIMALLOC_LIB" /out/libmimalloc.so
 
-FROM eclipse-temurin:21-jdk-noble
+FROM bellsoft/liberica-openjdk-debian:26
 LABEL org.opencontainers.image.authors="yunuservices"
 
 COPY ./entrypoint.sh /entrypoint.sh
@@ -113,6 +112,4 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 
 CMD ["/bin/sh", "/entrypoint.sh"]
-
-
 
