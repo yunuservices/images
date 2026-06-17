@@ -43,7 +43,7 @@ RUN set -eux; \
     fi; \
     JEMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libjemalloc.so*' 2>/dev/null | head -n1 || true)"; \
     if [ -z "$JEMALLOC_LIB" ]; then \
-      git clone --depth 1 https://github.com/facebook/jemalloc.git /tmp/jemalloc; \
+      git clone --depth 1 --branch 5.3.0 https://github.com/facebook/jemalloc.git /tmp/jemalloc; \
       cd /tmp/jemalloc; \
       ./autogen.sh --enable-prof; \
       make -j"$CPU_COUNT"; \
@@ -55,7 +55,7 @@ RUN set -eux; \
     cp "$JEMALLOC_LIB" /out/libjemalloc.so; \
     MIMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"; \
     if [ -z "$MIMALLOC_LIB" ]; then \
-      git clone --depth 1 --branch v2.1.2 https://github.com/microsoft/mimalloc.git /tmp/mimalloc; \
+      git clone --depth 1 --branch v3.3.2 https://github.com/microsoft/mimalloc.git /tmp/mimalloc; \
       cd /tmp/mimalloc; \
       make -j"$CPU_COUNT" || true; \
       MIMALLOC_LIB="$(find /tmp/mimalloc -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"; \
