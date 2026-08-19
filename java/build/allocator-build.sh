@@ -60,7 +60,7 @@ cp "$JEMALLOC_LIB" /out/libjemalloc.so
 
 MIMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"
 if [ -z "$MIMALLOC_LIB" ]; then
-    git clone --depth 1 --branch v3.3.2 https://github.com/microsoft/mimalloc.git /tmp/mimalloc
+    git clone --depth 1 --branch v3.4.5 https://github.com/microsoft/mimalloc.git /tmp/mimalloc
     cd /tmp/mimalloc
     make -j"$CPU_COUNT" || true
     MIMALLOC_LIB="$(find /tmp/mimalloc -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"
