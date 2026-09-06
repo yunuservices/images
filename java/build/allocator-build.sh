@@ -22,41 +22,43 @@ fi
 mkdir -p /out
 CPU_COUNT="$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc || echo 1)"
 
-# Resolve jemalloc/mimalloc from the package manager first; build from source otherwise.
+# Resolve mimalloc from the package manager first; build from source otherwise.
+# jemalloc is always built from source: distro packages lack jeprof and have no
+# guaranteed prof support.
 if command -v apt-get >/dev/null 2>&1; then
     apt-get update
-    apt-get install -y --no-install-recommends libjemalloc-dev || apt-get install -y --no-install-recommends libjemalloc2 || true
     apt-get install -y --no-install-recommends libmimalloc-dev || apt-get install -y --no-install-recommends libmimalloc2 || true
     rm -rf /var/lib/apt/lists/*
 elif command -v dnf >/dev/null 2>&1; then
-    dnf install -y jemalloc-devel || dnf install -y jemalloc || true
     dnf install -y mimalloc-devel || dnf install -y mimalloc || true
     dnf clean all
 elif command -v yum >/dev/null 2>&1; then
-    yum install -y jemalloc-devel || yum install -y jemalloc || true
     yum install -y mimalloc-devel || yum install -y mimalloc || true
     yum clean all
 elif command -v microdnf >/dev/null 2>&1; then
-    microdnf install -y jemalloc-devel || microdnf install -y jemalloc || true
     microdnf install -y mimalloc-devel || microdnf install -y mimalloc || true
     microdnf clean all
 elif command -v apk >/dev/null 2>&1; then
-    apk add --no-cache jemalloc-dev || apk add --no-cache jemalloc || true
     apk add --no-cache mimalloc-dev || apk add --no-cache mimalloc || true
 fi
 
-JEMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libjemalloc.so*' 2>/dev/null | head -n1 || true)"
-if [ -z "$JEMALLOC_LIB" ]; then
-    git clone --depth 1 --branch 5.3.0 https://github.com/facebook/jemalloc.git /tmp/jemalloc
-    cd /tmp/jemalloc
-    ./autogen.sh --enable-prof
-    make -j"$CPU_COUNT"
-    make install
-    cd /
-    JEMALLOC_LIB="$(find /usr/local/lib /tmp/jemalloc -type f -name 'libjemalloc.so*' 2>/dev/null | head -n1 || true)"
-fi
+# Always build jemalloc from source (distro packages lack jeprof and prof support).
+git clone --depth 1 --branch 5.3.0 https://github.com/facebook/jemalloc.git /tmp/jemalloc
+cd /tmp/jemalloc
+./autogen.sh --enable-prof
+make -j"$CPU_COUNT"
+make install
+cd /
+JEMALLOC_LIB="$(find /usr/local/lib /tmp/jemalloc -type f -name 'libjemalloc.so*' 2>/dev/null | head -n1 || true)"
 [ -n "$JEMALLOC_LIB" ] || { echo "failed to resolve jemalloc shared library"; exit 1; }
 cp "$JEMALLOC_LIB" /out/libjemalloc.so
+
+JEPROF_BIN="/usr/local/bin/jeprof"
+if [ ! -f "$JEPROF_BIN" ]; then
+    JEPROF_BIN="$(find /tmp/jemalloc /usr/local -type f -name 'jeprof*' 2>/dev/null | head -n1 || true)"
+fi
+[ -n "$JEPROF_BIN" ] || { echo "failed to locate jeprof executable"; exit 1; }
+cp "$JEPROF_BIN" /out/jeprof
 
 MIMALLOC_LIB="$(find /usr/local/lib /usr/lib /usr/lib64 /lib /lib64 -type f -name 'libmimalloc.so*' 2>/dev/null | head -n1 || true)"
 if [ -z "$MIMALLOC_LIB" ]; then

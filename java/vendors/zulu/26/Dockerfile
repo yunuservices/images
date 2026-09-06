@@ -8,6 +8,7 @@ LABEL org.opencontainers.image.authors="yunuservices"
 
 COPY ./entrypoint.sh /entrypoint.sh
 COPY --from=allocator-builder /out/libjemalloc.so /usr/local/lib/libjemalloc.so
+COPY --from=allocator-builder /out/jeprof /usr/local/bin/jeprof
 COPY --from=allocator-builder /out/libmimalloc.so /usr/local/lib/libmimalloc.so
 
 COPY build/runtime-setup.sh /usr/local/bin/runtime-setup.sh
