@@ -47,7 +47,8 @@ jobs:
     name: Matrix
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}                   # build legs (arch included)
+      matrix_images: ${{ steps.set-matrix.outputs.matrix_images }}     # merge legs (image only)
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -55,15 +56,24 @@ jobs:
       - name: Resolve images from Dockerfiles
         id: set-matrix
         run: |
-          MATRIX=$(find java -mindepth 4 -maxdepth 4 -name Dockerfile -type f \
+          ITEMS=$(find java -mindepth 4 -maxdepth 4 -name Dockerfile -type f \
             | sort \
-            | sed -E 's#java/vendors/([^/]+)/([^/]+)/Dockerfile#{"vendor":"\1","version":"\2"}#' \
-            | paste -sd, -)
-          echo "matrix={\"include\":[${MATRIX}]}" >> "$GITHUB_OUTPUT"
+            | sed -E 's#java/vendors/([^/]+)/([^/]+)/Dockerfile#\1 \2#')
+          MATRIX=$(printf '%s\n' "$ITEMS" | while read -r vendor version; do
+            [ -n "$vendor" ] || continue
+            printf '{"vendor":"%s","version":"%s","arch":"amd64","runner":"ubuntu-latest"},' "$vendor" "$version"
+            printf '{"vendor":"%s","version":"%s","arch":"arm64","runner":"ubuntu-24.04-arm"},' "$vendor" "$version"
+          done)
+          IMAGES=$(printf '%s\n' "$ITEMS" | while read -r vendor version; do
+            [ -n "$vendor" ] || continue
+            printf '{"vendor":"%s","version":"%s"},' "$vendor" "$version"
+          done)
+          echo "matrix={\"include\":[${MATRIX%,}]}" >> "$GITHUB_OUTPUT"
+          echo "matrix_images={\"include\":[${IMAGES%,}]}" >> "$GITHUB_OUTPUT"
 
   build:
-    name: "${{ matrix.vendor }}_${{ matrix.version }}"
-    runs-on: ubuntu-latest
+    name: "${{ matrix.vendor }}_${{ matrix.version }} (${{ matrix.arch }})"
+    runs-on: ${{ matrix.runner }}
     needs: matrix
     permissions:
       contents: read
@@ -76,9 +86,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -90,16 +97,69 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push by digest
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./java
           file: ./java/vendors/${{ matrix.vendor }}/${{ matrix.version }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/images:${{ matrix.vendor }}_${{ matrix.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: true
           sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/images,push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+
+      - name: Export digest
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.vendor }}-${{ matrix.version }}-${{ matrix.arch }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: "merge ${{ matrix.vendor }}_${{ matrix.version }}"
+    runs-on: ubuntu-latest
+    needs: [matrix, build]
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix.outputs.matrix_images) }}
+
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-${{ matrix.vendor }}-${{ matrix.version }}-*
+          path: /tmp/digests
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create multi-arch manifest
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create -t \
+            ghcr.io/${{ github.repository_owner }}/images:${{ matrix.vendor }}_${{ matrix.version }} \
+            $(printf 'ghcr.io/${{ github.repository_owner }}/images@sha256:%s ' *)
