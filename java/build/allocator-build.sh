@@ -3,7 +3,7 @@ set -eux
 
 # Runs on Amazon Linux 2023 (glibc 2.34), the oldest glibc among the base
 # images, so the resulting libraries load on every vendor image.
-JEMALLOC_VERSION=5.3.0
+JEMALLOC_VERSION=5.4.0
 MIMALLOC_VERSION=v3.4.5
 GPERFTOOLS_VERSION=gperftools-2.18.1
 
@@ -14,7 +14,7 @@ mkdir -p /out
 CPU_COUNT="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 
 # jemalloc is built from source: distro packages lack jeprof and prof support.
-git clone --depth 1 --branch "$JEMALLOC_VERSION" https://github.com/facebook/jemalloc.git /tmp/jemalloc
+git clone --depth 1 --branch "$JEMALLOC_VERSION" https://github.com/jemalloc/jemalloc.git /tmp/jemalloc
 cd /tmp/jemalloc
 ./autogen.sh --enable-prof
 make -j"$CPU_COUNT"
