@@ -71,7 +71,7 @@ if [ -n "$heap_file" ]; then
     if printf '%s\n' "$report" | awk '$NF !~ /^0x/ { found = 1 } END { exit !found }'; then
         pass "jeprof resolves symbols"
     else
-        echo "::warning::jeprof could not resolve any symbol names"
+        fail "jeprof resolves symbols"
     fi
 fi
 
