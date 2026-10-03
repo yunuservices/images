@@ -51,3 +51,22 @@ select_allocator() {
         log_info "Using allocator: jemalloc (RSS tuned)"
     fi
 }
+
+# Caps glibc malloc arenas, which otherwise grow to 8 per CPU and inflate RSS
+# in heavily threaded JVMs. Only applies to the default allocator.
+apply_malloc_arena_limit() {
+    arenas=$(extract_dprop arenas)
+    [ -n "$arenas" ] || return 0
+    case "$arenas" in
+        *[!0-9]*|0)
+            log_error "-Darenas=$arenas is not a positive number, ignoring it."
+            return 0
+            ;;
+    esac
+    if [ -n "$SELECTED_ALLOC" ]; then
+        log_error "-Darenas only applies to the default allocator, ignoring it with $SELECTED_ALLOC."
+        return 0
+    fi
+    export MALLOC_ARENA_MAX="$arenas"
+    log_info "Using glibc malloc with at most $arenas arenas"
+}

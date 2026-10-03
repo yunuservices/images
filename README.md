@@ -30,6 +30,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dkeep=N` | With `-Ddump=true`, keeps only the newest `N` converted heap dumps and deletes older dumps together with their GIFs. Unset keeps everything. |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dtcmalloc=true` | Loads `tcmalloc_minimal` from gperftools via `LD_PRELOAD`. Performance allocator; no profiling support. |
+| `-Darenas=N` | Sets `MALLOC_ARENA_MAX=N` for the default glibc allocator. Ignored when another allocator is selected. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Dnmt=true` | Starts the JVM with `-XX:NativeMemoryTracking=summary` and writes periodic NMT reports (see [Native memory tracking](#native-memory-tracking)). |
 | `-Dnmtinterval=N` | NMT report interval in seconds. Default `300`. |
@@ -42,6 +43,9 @@ Startup switches are passed as JVM system properties. They can be combined unles
 Notes:
 - `jemalloc`, `mimalloc` and `tcmalloc` are mutually exclusive. Setting more than one is rejected with a warning; `-Ddump=true` counts as `jemalloc` for this check.
 - If a custom `MALLOC_CONF` env var is set, the image defaults are written first and the user value is appended last, so user options override the image defaults.
+
+## glibc malloc arenas
+glibc malloc creates up to 8 arenas per CPU so threads rarely share one. A JVM runs many threads, so freed memory ends up scattered across dozens of arenas and RSS stays high long after the heap shrinks. `-Darenas=2` caps that and often cuts RSS noticeably. The trade-off is more lock contention when many threads allocate native memory at once. If you can switch allocators, `-Djemalloc=true` usually reduces RSS further without that cost.
 
 ## Default Behavior
 - If neither allocator switch is enabled, the image runs with default `malloc`.

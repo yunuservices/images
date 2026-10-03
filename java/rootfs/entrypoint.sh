@@ -38,6 +38,7 @@ if dprop_enabled dump; then
 fi
 
 select_allocator
+apply_malloc_arena_limit
 
 NMT_ENABLED=false
 if dprop_enabled nmt && enable_native_memory_tracking; then
