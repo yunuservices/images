@@ -1,7 +1,9 @@
 JEMALLOC_LIB=/usr/local/lib/libjemalloc.so
 MIMALLOC_LIB=/usr/local/lib/libmimalloc.so
 JEMALLOC_DEFAULT_CONF="background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:0,tcache_max:1024"
-JEMALLOC_PROFILING_CONF="prof:true,lg_prof_interval:31,lg_prof_sample:17,prof_prefix:$DUMP_DIR/jeprof/jeprof"
+# The JVM usually runs as PID 1, so a start timestamp keeps dump names unique
+# across restarts.
+JEMALLOC_PROFILING_CONF="prof:true,lg_prof_interval:31,lg_prof_sample:17,prof_prefix:$DUMP_DIR/jeprof/jeprof-$(date -u +%Y%m%d-%H%M%S)"
 
 # Sets SELECTED_ALLOC and exports LD_PRELOAD and MALLOC_CONF for the chosen allocator.
 select_allocator() {

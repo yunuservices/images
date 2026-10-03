@@ -14,7 +14,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | Switch | Effect |
 | --- | --- |
 | `-Djemalloc=true` | Loads `libjemalloc` via `LD_PRELOAD` and exports a default `MALLOC_CONF` with RSS tuning: `background_thread:true` (a background thread purges freed memory), `dirty_decay_ms:1000` (dirty pages are returned to the OS after ~1s), `muzzy_decay_ms:0` (muzzy pages are returned immediately), `tcache_max:1024` (caps the per-thread cache size). |
-| `-Ddump=true` | Implies `-Djemalloc=true`. Adds profiling options to `MALLOC_CONF`: `prof:true` (enables heap profiling), `lg_prof_interval:31` (a heap dump roughly every 2 GiB of allocation), `lg_prof_sample:17` (~128 KiB sampling interval), `prof_prefix:/home/container/dumps/jeprof/jeprof` (dump files are written as `jeprof.<pid>.<seq>.i<n>.heap` in that directory). |
+| `-Ddump=true` | Implies `-Djemalloc=true`. Adds profiling options to `MALLOC_CONF`: `prof:true` (enables heap profiling), `lg_prof_interval:31` (a heap dump roughly every 2 GiB of allocation), `lg_prof_sample:17` (~128 KiB sampling interval), `prof_prefix:/home/container/dumps/jeprof/jeprof-<UTC start time>` (dump files are written as `jeprof-<start>.<pid>.<seq>.i<n>.heap` in that directory, so restarts never overwrite older dumps). |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
