@@ -1,0 +1,31 @@
+{
+  "corretto": {
+    "17": "amazoncorretto:17-al2023-jdk",
+    "21": "amazoncorretto:21-al2023-jdk",
+    "25": "amazoncorretto:25",
+    "26": "amazoncorretto:26"
+  },
+  "graalvm": {
+    "17": "container-registry.oracle.com/graalvm/jdk:17",
+    "21": "container-registry.oracle.com/graalvm/jdk:21",
+    "25": "container-registry.oracle.com/graalvm/jdk:25"
+  },
+  "liberica": {
+    "17": "bellsoft/liberica-openjdk-debian:17",
+    "21": "bellsoft/liberica-openjdk-debian:21",
+    "25": "bellsoft/liberica-openjdk-debian:25",
+    "26": "bellsoft/liberica-openjdk-debian:26"
+  },
+  "temurin": {
+    "17": "eclipse-temurin:17-jdk-noble",
+    "21": "eclipse-temurin:21-jdk-noble",
+    "25": "eclipse-temurin:25-jdk-noble",
+    "26": "eclipse-temurin:26-jdk-noble"
+  },
+  "zulu": {
+    "17": "azul/zulu-openjdk:17",
+    "21": "azul/zulu-openjdk:21",
+    "25": "azul/zulu-openjdk:25",
+    "26": "azul/zulu-openjdk:26"
+  }
+}

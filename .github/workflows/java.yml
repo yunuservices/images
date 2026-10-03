@@ -43,9 +43,7 @@ jobs:
 
       - name: Hadolint
         # Fail on warnings and errors, ignore info/style suggestions.
-        run: |
-          find java -mindepth 4 -maxdepth 4 -name Dockerfile -type f -print0 \
-            | xargs -0 -n1 hadolint --failure-threshold warning
+        run: hadolint --failure-threshold warning java/Dockerfile
 
   matrix:
     name: Matrix
@@ -57,23 +55,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Resolve images from Dockerfiles
+      - name: Resolve images from versions.json
         id: set-matrix
         run: |
-          ITEMS=$(find java -mindepth 4 -maxdepth 4 -name Dockerfile -type f \
-            | sort \
-            | sed -E 's#java/vendors/([^/]+)/([^/]+)/Dockerfile#\1 \2#')
-          MATRIX=$(printf '%s\n' "$ITEMS" | while read -r vendor version; do
-            [ -n "$vendor" ] || continue
-            printf '{"vendor":"%s","version":"%s","arch":"amd64","runner":"ubuntu-latest"},' "$vendor" "$version"
-            printf '{"vendor":"%s","version":"%s","arch":"arm64","runner":"ubuntu-24.04-arm"},' "$vendor" "$version"
-          done)
-          IMAGES=$(printf '%s\n' "$ITEMS" | while read -r vendor version; do
-            [ -n "$vendor" ] || continue
-            printf '{"vendor":"%s","version":"%s"},' "$vendor" "$version"
-          done)
-          echo "matrix={\"include\":[${MATRIX%,}]}" >> "$GITHUB_OUTPUT"
-          echo "matrix_images={\"include\":[${IMAGES%,}]}" >> "$GITHUB_OUTPUT"
+          IMAGES=$(jq -c '[to_entries[] | .key as $vendor | .value | to_entries[]
+            | {vendor: $vendor, version: .key, base: .value}]' java/versions.json)
+          MATRIX=$(printf '%s' "$IMAGES" | jq -c '[.[] | (. + {arch: "amd64", runner: "ubuntu-latest"}),
+            (. + {arch: "arm64", runner: "ubuntu-24.04-arm"})]')
+          echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
+          echo "matrix_images={\"include\":$(printf '%s' "$IMAGES" | jq -c 'map(del(.base))')}" >> "$GITHUB_OUTPUT"
 
   build:
     name: "${{ matrix.vendor }}_${{ matrix.version }} (${{ matrix.arch }})"
@@ -106,13 +96,14 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./java
-          file: ./java/vendors/${{ matrix.vendor }}/${{ matrix.version }}/Dockerfile
+          file: ./java/Dockerfile
+          build-args: BASE_IMAGE=${{ matrix.base }}
           platforms: linux/${{ matrix.arch }}
           push: ${{ github.event_name != 'pull_request' }}
           provenance: true
           sbom: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.vendor }}-${{ matrix.version }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.vendor }}-${{ matrix.version }}-${{ matrix.arch }}
           outputs: type=image,name=ghcr.io/${{ github.repository_owner }}/images,push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
 
       - name: Export digest

@@ -1,9 +1,11 @@
-FROM eclipse-temurin:21-jdk-noble AS allocator-builder
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE} AS allocator-builder
 
 COPY build/allocator-build.sh /usr/local/bin/allocator-build.sh
 RUN sh /usr/local/bin/allocator-build.sh
 
-FROM eclipse-temurin:21-jdk-noble
+FROM ${BASE_IMAGE}
 LABEL org.opencontainers.image.authors="yunuservices"
 
 COPY ./entrypoint.sh /entrypoint.sh
