@@ -31,8 +31,28 @@ check_within() {
     fail "$name"
 }
 
+# The checks below are re-evaluated on every attempt, so patterns are passed
+# quoted and expanded here.
 has_files() {
-    ls "$@" >/dev/null 2>&1
+    for file in $1; do
+        [ -e "$file" ] && return 0
+    done
+    return 1
+}
+
+file_contains() {
+    for file in $2; do
+        grep -q -- "$1" "$file" 2>/dev/null && return 0
+    done
+    return 1
+}
+
+line_count_at_least() {
+    [ "$(wc -l < "$1" 2>/dev/null || echo 0)" -ge "$2" ]
+}
+
+heap_dumps_at_most() {
+    [ "$(ls "$DUMP_DIR"/jeprof/*.heap 2>/dev/null | wc -l)" -le "$1" ]
 }
 
 # Runs the entrypoint with a startup command and expects a clean exit, the
@@ -166,17 +186,17 @@ export MALLOC_CONF=lg_prof_interval:23
 (STARTUP="java -Ddump=true -Ddiff=true -Dkeep=2 -Djeprof_format=svg,txt -Danalyse=stack -Dkeyword=smokeMarker -Dinterval=2 -Dnmt=true -Dnmtinterval=2 -Drss=true -Drssinterval=1 /tmp/Smoke.java 20" sh /entrypoint.sh) >/dev/null 2>&1
 unset MALLOC_CONF
 
-check_within "stack watcher keeps matching dumps" 1 grep -lq smokeMarker "$DUMP_DIR"/traces/trace-*.txt
-check_within "nmt report written" 1 grep -lq "Native Memory Tracking" "$DUMP_DIR"/nmt/nmt-*.txt
-check_within "rss samples recorded" 1 test "$(wc -l < "$DUMP_DIR/rss.csv")" -ge 3
-check_within "diff report written" 60 has_files "$DUMP_DIR"/output/*.diff.svg
-check_within "txt report written" 60 has_files "$DUMP_DIR"/output/*.heap.txt
-check_within "retention keeps two dumps" 90 test "$(ls "$DUMP_DIR"/jeprof/*.heap | wc -l)" -le 2
+check_within "stack watcher keeps matching dumps" 1 file_contains smokeMarker "$DUMP_DIR/traces/trace-*.txt"
+check_within "nmt report written" 1 file_contains "Native Memory Tracking" "$DUMP_DIR/nmt/nmt-*.txt"
+check_within "rss samples recorded" 1 line_count_at_least "$DUMP_DIR/rss.csv" 3
+check_within "diff report written" 60 has_files "$DUMP_DIR/output/*.diff.svg"
+check_within "txt report written" 60 has_files "$DUMP_DIR/output/*.heap.txt"
+check_within "retention keeps two dumps" 90 heap_dumps_at_most 2
 
 stop_background_loops
 rm -rf "$DUMP_DIR"/traces/*
 : > /home/container/logs/latest.log
 (STARTUP="java -Danalyse=true -Dinterval=1 /tmp/Smoke.java 6" sh /entrypoint.sh) >/dev/null 2>&1
-check_within "log watcher dumps on keyword" 1 has_files "$DUMP_DIR"/traces/trace-*.txt
+check_within "log watcher dumps on keyword" 1 has_files "$DUMP_DIR/traces/trace-*.txt"
 
 exit "$failed"
