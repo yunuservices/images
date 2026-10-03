@@ -33,6 +33,8 @@ Notes:
 ## Native heap profiling (jeprof GIFs)
 With `-Ddump=true`, raw heap dumps are written to `/home/container/dumps/jeprof/*.heap` (each typically 50-200 KiB). A background loop converts every new dump with `jeprof --gif` into `/home/container/dumps/output/*.gif` (each roughly 200-300 KiB). `jeprof` and `graphviz` ship in the image, so no extra tooling is needed.
 
+GIFs keep every node and edge (`--show_bytes --nodefraction=0 --edgefraction=0 --maxdegree=20`), so small, slow leaks are not pruned from the graph. Set the `JEPROF_OPTS` env var to replace these options.
+
 Reading a GIF:
 - Bigger nodes mean more retained native memory at that call path.
 - The key rule: allocation paths that reach `je_malloc_default` **without** passing through `os#malloc` are strong leak candidates. They bypass the JVM's collector and can never be freed by GC.
