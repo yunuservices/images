@@ -1,4 +1,4 @@
-ARG BASE_IMAGE
+ARG BASE_IMAGE=eclipse-temurin:21-jdk-noble
 
 FROM amazonlinux:2023 AS allocator-builder
 
