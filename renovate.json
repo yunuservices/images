@@ -1,0 +1,26 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "enabledManagers": ["github-actions", "custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^java/build/allocator-build\\.sh$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION=(?<currentValue>\\S+)"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["gperftools/gperftools"],
+      "extractVersion": "^gperftools-(?<version>.+)$",
+      "allowedVersions": "!/^\\d+\\.\\d+\\.9\\d+$/"
+    },
+    {
+      "matchPackageNames": ["async-profiler/async-profiler"],
+      "extractVersion": "^v(?<version>.+)$",
+      "prBodyNotes": ["Update `ASYNC_PROFILER_SHA256_X64` and `ASYNC_PROFILER_SHA256_ARM64` before merging, the build fails on the old checksums."]
+    }
+  ]
+}

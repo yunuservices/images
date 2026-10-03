@@ -3,9 +3,13 @@ set -eux
 
 # Runs on Amazon Linux 2023 (glibc 2.34), the oldest glibc among the base
 # images, so the resulting libraries load on every vendor image.
+# renovate: datasource=github-tags depName=jemalloc/jemalloc
 JEMALLOC_VERSION=5.4.0
+# renovate: datasource=github-tags depName=microsoft/mimalloc
 MIMALLOC_VERSION=v3.5.3
-GPERFTOOLS_VERSION=gperftools-2.18.1
+# renovate: datasource=github-tags depName=gperftools/gperftools
+GPERFTOOLS_VERSION=2.18.1
+# renovate: datasource=github-releases depName=async-profiler/async-profiler
 ASYNC_PROFILER_VERSION=4.5
 ASYNC_PROFILER_SHA256_X64=89546fbb9ee0fc5496c7edd4099b0709489bc78b0d8057ccbb4b801f6b032b62
 ASYNC_PROFILER_SHA256_ARM64=64c41d1465d60097439c50d7e924b4946f1f62b1cbd21ce5b034fad09c0d6979
@@ -36,7 +40,7 @@ MIMALLOC_LIB="$(find /tmp/mimalloc/build -type f -name 'libmimalloc.so*' | head 
 cp "$MIMALLOC_LIB" /out/libmimalloc.so
 
 # Only tcmalloc_minimal is built; heap profiling is covered by jemalloc.
-git clone --depth 1 --branch "$GPERFTOOLS_VERSION" https://github.com/gperftools/gperftools.git /tmp/gperftools
+git clone --depth 1 --branch "gperftools-$GPERFTOOLS_VERSION" https://github.com/gperftools/gperftools.git /tmp/gperftools
 cd /tmp/gperftools
 ./autogen.sh
 ./configure --enable-minimal --disable-static
