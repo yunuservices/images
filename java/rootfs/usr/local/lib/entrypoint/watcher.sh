@@ -16,6 +16,7 @@ write_thread_dump() {
 
 # Writes a thread dump whenever the keyword shows up in new log output.
 watch_log() {
+    reset_allocator_env
     log_file="${LOG_FILE:-/home/container/logs/latest.log}"
     offset=0
     while :; do
@@ -44,6 +45,7 @@ watch_log() {
 # Takes a thread dump every interval and keeps it only when a stack frame
 # contains the keyword, e.g. a native method such as java.util.zip.Inflater.
 watch_stacks() {
+    reset_allocator_env
     pending="$DUMP_DIR/traces/.pending"
     while :; do
         sleep "$interval" || exit 0

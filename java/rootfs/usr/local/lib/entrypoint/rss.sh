@@ -24,6 +24,7 @@ start_rss_recorder() {
 
     log_info "RSS recording enabled (every ${interval}s → $RSS_CSV)"
     (
+        reset_allocator_env
         [ -f "$RSS_CSV" ] || echo "time,vm_rss_kb,rss_anon_kb,rss_file_kb,threads,open_fds" > "$RSS_CSV"
         pid=""
         while [ -z "$pid" ]; do

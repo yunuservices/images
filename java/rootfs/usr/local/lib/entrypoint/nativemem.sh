@@ -31,6 +31,7 @@ enable_nativemem_profiler() {
 # still being written, so it is skipped until a newer one exists.
 start_nativemem_converter() {
     (
+        reset_allocator_env
         while :; do
             newest=$(ls "$NATIVEMEM_DIR"/*.jfr 2>/dev/null | sort | tail -n 1)
             for recording in "$NATIVEMEM_DIR"/*.jfr; do

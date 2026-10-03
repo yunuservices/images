@@ -24,6 +24,7 @@ start_nmt_reporter() {
     mkdir -p "$DUMP_DIR/nmt"
     log_info "native memory tracking enabled (report every ${interval}s → $DUMP_DIR/nmt)"
     (
+        reset_allocator_env
         pid=""
         while [ -z "$pid" ]; do
             sleep 5 || exit 0

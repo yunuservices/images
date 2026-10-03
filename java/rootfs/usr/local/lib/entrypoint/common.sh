@@ -33,6 +33,12 @@ dprop_enabled() {
     is_true "$(extract_dprop "$1")"
 }
 
+# Background helpers (jeprof, jcmd, ...) must not inherit the allocator chosen
+# for the JVM: with heap profiling on they would write their own dumps.
+reset_allocator_env() {
+    unset LD_PRELOAD MALLOC_CONF MALLOC_ARENA_MAX
+}
+
 # Inserts JVM options right after the java binary of the startup command.
 add_jvm_options() {
     java_cmd=${PARSED%% *}

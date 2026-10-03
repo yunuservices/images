@@ -91,6 +91,7 @@ start_heap_profiler() {
     esac
 
     (
+        reset_allocator_env
         java_bin=$(readlink -f "$(command -v java)")
         [ -n "$java_bin" ] || exit 0
         previous=""
