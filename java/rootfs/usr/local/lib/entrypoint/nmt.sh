@@ -1,0 +1,48 @@
+# Adds -XX:NativeMemoryTracking=summary right after the java binary.
+enable_native_memory_tracking() {
+    java_cmd=${PARSED%% *}
+    case "$java_cmd" in
+        java|*/java)
+            ;;
+        *)
+            log_error "-Dnmt=true needs the startup command to start with java, NMT disabled."
+            return 1
+            ;;
+    esac
+    PARSED="$java_cmd -XX:NativeMemoryTracking=summary${PARSED#"$java_cmd"}"
+}
+
+# Takes an NMT baseline once the JVM is up, then writes a summary diff against
+# it every interval.
+start_nmt_reporter() {
+    if ! command -v jcmd >/dev/null 2>&1; then
+        log_info "jcmd not found, NMT reports disabled."
+        return
+    fi
+
+    interval=$(extract_dprop nmtinterval)
+    case "$interval" in
+        ''|*[!0-9]*|0)
+            interval=300
+            ;;
+    esac
+
+    mkdir -p "$DUMP_DIR/nmt"
+    log_info "native memory tracking enabled (report every ${interval}s → $DUMP_DIR/nmt)"
+    (
+        pid=""
+        while [ -z "$pid" ]; do
+            sleep 5 || exit 0
+            pid=$(find_jvm_pid)
+        done
+        until jcmd "$pid" VM.native_memory baseline >/dev/null 2>&1; do
+            [ -d "/proc/$pid" ] || exit 0
+            sleep 5 || exit 0
+        done
+        while :; do
+            sleep "$interval" || exit 0
+            [ -d "/proc/$pid" ] || exit 0
+            jcmd "$pid" VM.native_memory summary.diff > "$DUMP_DIR/nmt/nmt-$(date -u +%Y%m%d-%H%M%S).txt" 2>&1
+        done
+    ) >> "$DUMP_DIR/nmt.log" 2>&1 &
+}

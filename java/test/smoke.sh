@@ -37,6 +37,7 @@ check_startup default "Using default(malloc) allocator" java -version
 check_startup jemalloc "Using allocator: jemalloc" java -Djemalloc=true -version
 check_startup mimalloc "Using allocator: mimalloc" java -Dmimalloc=true -version
 check_startup tcmalloc "Using allocator: tcmalloc" java -Dtcmalloc=true -version
+check_startup nmt "native memory tracking enabled" java -Dnmt=true -version
 
 # A 1 MiB dump interval and a final dump make a short-lived JVM write heap profiles.
 export MALLOC_CONF=lg_prof_interval:20,prof_final:true

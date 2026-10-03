@@ -5,6 +5,7 @@ LIB_DIR=/usr/local/lib/entrypoint
 . "$LIB_DIR/allocator.sh"
 . "$LIB_DIR/profiler.sh"
 . "$LIB_DIR/watcher.sh"
+. "$LIB_DIR/nmt.sh"
 
 TZ=${TZ:-UTC}
 export TZ
@@ -37,12 +38,21 @@ fi
 
 select_allocator
 
+NMT_ENABLED=false
+if dprop_enabled nmt && enable_native_memory_tracking; then
+    NMT_ENABLED=true
+fi
+
 log_info "$PARSED"
 
 mkdir -p "$DUMP_DIR/jeprof" "$DUMP_DIR/output/.done" "$DUMP_DIR/traces"
 
 if [ "$DUMP_ENABLED" = true ] && [ "$SELECTED_ALLOC" = "jemalloc" ]; then
     start_heap_profiler
+fi
+
+if [ "$NMT_ENABLED" = true ]; then
+    start_nmt_reporter
 fi
 
 ANALYSE_MODE=$(to_lower "$(extract_dprop analyse)")

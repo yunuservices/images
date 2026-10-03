@@ -1,22 +1,3 @@
-find_jvm_pid() {
-    pid=$(pgrep -x java 2>/dev/null | head -n 1)
-    if [ -z "$pid" ]; then
-        pid=$(pgrep -f java 2>/dev/null | head -n 1)
-    fi
-    if [ -z "$pid" ]; then
-        for proc_dir in /proc/[0-9]*; do
-            cmdline=$(tr '\0' ' ' < "$proc_dir/cmdline" 2>/dev/null)
-            case "${cmdline%% *}" in
-                */java|java)
-                    pid=${proc_dir#/proc/}
-                    break
-                    ;;
-            esac
-        done
-    fi
-    printf '%s' "$pid"
-}
-
 trace_file_name() {
     printf '%s' "$DUMP_DIR/traces/trace-$(date -u +%Y%m%d-%H%M%S).txt"
 }

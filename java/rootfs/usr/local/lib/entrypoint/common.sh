@@ -31,3 +31,22 @@ extract_dprop() {
 dprop_enabled() {
     is_true "$(extract_dprop "$1")"
 }
+
+find_jvm_pid() {
+    pid=$(pgrep -x java 2>/dev/null | head -n 1)
+    if [ -z "$pid" ]; then
+        pid=$(pgrep -f java 2>/dev/null | head -n 1)
+    fi
+    if [ -z "$pid" ]; then
+        for proc_dir in /proc/[0-9]*; do
+            cmdline=$(tr '\0' ' ' < "$proc_dir/cmdline" 2>/dev/null)
+            case "${cmdline%% *}" in
+                */java|java)
+                    pid=${proc_dir#/proc/}
+                    break
+                    ;;
+            esac
+        done
+    fi
+    printf '%s' "$pid"
+}

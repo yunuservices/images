@@ -20,6 +20,8 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dtcmalloc=true` | Loads `tcmalloc_minimal` from gperftools via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
+| `-Dnmt=true` | Starts the JVM with `-XX:NativeMemoryTracking=summary` and writes periodic NMT reports (see [Native memory tracking](#native-memory-tracking)). |
+| `-Dnmtinterval=N` | NMT report interval in seconds. Default `300`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
 | `-Danalyse=stack` | Enables the watcher in stack mode: dumps are taken every interval and kept only when they contain the keyword. |
 | `-Dkeyword=X` | Trigger keyword for the watcher. In log mode the default is `Can't`, which matches Minecraft's "Can't keep up!" line; stack mode requires it. Underscores in the value become spaces, e.g. `-Dkeyword=Can't_keep_up!`. |
@@ -45,6 +47,11 @@ Reading a GIF:
 - Compare successive GIFs to see which paths grow over time.
 
 With `-Ddiff=true`, every dump after the first one of a JVM run also gets a `*.diff.gif` rendered with `jeprof --base=<previous dump>`. It shows only the memory that was allocated and not freed between the two dumps, which is usually the fastest way to spot a leak.
+
+## Native memory tracking
+With `-Dnmt=true`, `-XX:NativeMemoryTracking=summary` is inserted right after the `java` binary of the startup command (the command has to start with `java`). Once the JVM is up, an NMT baseline is taken, and every `-Dnmtinterval=N` seconds `jcmd <pid> VM.native_memory summary.diff` is written to `/home/container/dumps/nmt/nmt-<UTC timestamp>.txt`.
+
+NMT only sees memory the JVM itself allocates (heap, metaspace, threads, code cache, GC, internal). Use it together with `-Ddump=true`: if NMT stays flat while the process RSS grows, the leak is outside the JVM (JNI, native libraries such as zip inflaters) and the jeprof GIFs show where it is.
 
 ## Thread dumps
 The watcher has two modes. Both write matches to `/home/container/dumps/traces/trace-<UTC timestamp>.txt` using `jcmd ... Thread.print`, with `jstack` as fallback.
