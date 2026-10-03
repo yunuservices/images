@@ -9,6 +9,8 @@ RUN sh /usr/local/bin/allocator-build.sh
 FROM scratch AS allocators
 COPY --from=allocator-builder /out/ /
 
+# Tags come from versions.json.
+# hadolint ignore=DL3006
 FROM ${BASE_IMAGE}
 LABEL org.opencontainers.image.authors="yunuservices"
 
