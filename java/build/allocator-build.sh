@@ -6,8 +6,11 @@ set -eux
 JEMALLOC_VERSION=5.4.0
 MIMALLOC_VERSION=v3.5.3
 GPERFTOOLS_VERSION=gperftools-2.18.1
+ASYNC_PROFILER_VERSION=4.5
+ASYNC_PROFILER_SHA256_X64=89546fbb9ee0fc5496c7edd4099b0709489bc78b0d8057ccbb4b801f6b032b62
+ASYNC_PROFILER_SHA256_ARM64=64c41d1465d60097439c50d7e924b4946f1f62b1cbd21ce5b034fad09c0d6979
 
-dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool cmake libatomic
+dnf install -y ca-certificates git tar gzip findutils gcc gcc-c++ make autoconf automake libtool cmake libatomic
 dnf clean all
 
 mkdir -p /out
@@ -42,3 +45,26 @@ cd /
 TCMALLOC_LIB="$(find /tmp/gperftools/.libs -type f -name 'libtcmalloc_minimal.so*' | head -n1)"
 [ -n "$TCMALLOC_LIB" ] || { echo "failed to resolve tcmalloc shared library"; exit 1; }
 cp "$TCMALLOC_LIB" /out/libtcmalloc_minimal.so
+
+# async-profiler ships portable Linux builds, so the release archive is used
+# after checking its published checksum.
+case "$(uname -m)" in
+    x86_64)
+        ASYNC_PROFILER_ARCH=x64
+        ASYNC_PROFILER_SHA256=$ASYNC_PROFILER_SHA256_X64
+        ;;
+    aarch64)
+        ASYNC_PROFILER_ARCH=arm64
+        ASYNC_PROFILER_SHA256=$ASYNC_PROFILER_SHA256_ARM64
+        ;;
+    *)
+        echo "unsupported architecture for async-profiler: $(uname -m)"
+        exit 1
+        ;;
+esac
+ASYNC_PROFILER_NAME="async-profiler-$ASYNC_PROFILER_VERSION-linux-$ASYNC_PROFILER_ARCH"
+curl -fsSL -o /tmp/async-profiler.tar.gz \
+    "https://github.com/async-profiler/async-profiler/releases/download/v$ASYNC_PROFILER_VERSION/$ASYNC_PROFILER_NAME.tar.gz"
+echo "$ASYNC_PROFILER_SHA256  /tmp/async-profiler.tar.gz" | sha256sum -c -
+tar -xzf /tmp/async-profiler.tar.gz -C /tmp
+mv "/tmp/$ASYNC_PROFILER_NAME" /out/async-profiler

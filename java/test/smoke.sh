@@ -77,6 +77,15 @@ if [ -n "$heap_file" ]; then
     fi
 fi
 
+check_startup nativemem "native memory profiling enabled" java -Dnativemem=true -version
+recording=$(ls "$DUMP_DIR"/nativemem/*.jfr 2>/dev/null | head -n 1)
+if [ -n "$recording" ] && /opt/async-profiler/bin/jfrconv --nativemem --leak "$recording" /tmp/nativemem.html >/dev/null 2>&1 \
+    && [ -s /tmp/nativemem.html ]; then
+    pass "nativemem recording converted"
+else
+    fail "nativemem recording converted"
+fi
+
 # Runs a single-file program that fills the heap until it fails.
 cat > /tmp/Oom.java <<'EOF_JAVA'
 class Oom {

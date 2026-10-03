@@ -8,6 +8,7 @@ LIB_DIR=/usr/local/lib/entrypoint
 . "$LIB_DIR/nmt.sh"
 . "$LIB_DIR/oom.sh"
 . "$LIB_DIR/rss.sh"
+. "$LIB_DIR/nativemem.sh"
 
 TZ=${TZ:-UTC}
 export TZ
@@ -46,6 +47,15 @@ if dprop_enabled nmt && enable_native_memory_tracking; then
     NMT_ENABLED=true
 fi
 
+NATIVEMEM_ENABLED=false
+if dprop_enabled nativemem; then
+    if [ "$DUMP_ENABLED" = true ]; then
+        log_error "-Dnativemem=true and -Ddump=true both track native allocations. Choose only one, native memory profiling disabled."
+    elif enable_nativemem_profiler; then
+        NATIVEMEM_ENABLED=true
+    fi
+fi
+
 if dprop_enabled oomdump; then
     enable_oom_heap_dump
 fi
@@ -60,6 +70,10 @@ fi
 
 if [ "$NMT_ENABLED" = true ]; then
     start_nmt_reporter
+fi
+
+if [ "$NATIVEMEM_ENABLED" = true ]; then
+    start_nativemem_converter
 fi
 
 if dprop_enabled rss; then

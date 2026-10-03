@@ -35,6 +35,8 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Dnmt=true` | Starts the JVM with `-XX:NativeMemoryTracking=summary` and writes periodic NMT reports (see [Native memory tracking](#native-memory-tracking)). |
 | `-Dnmtinterval=N` | NMT report interval in seconds. Default `300`. |
+| `-Dnativemem=true` | Records native allocations with async-profiler and writes leak flame graphs (see [Native memory leaks with async-profiler](#native-memory-leaks-with-async-profiler)). Cannot be combined with `-Ddump=true`. |
+| `-Dnativememinterval=N` | Length of each nativemem recording in seconds. Default `3600`. |
 | `-Doomdump=true` | Writes a heap dump to `/home/container/dumps/oom/heap-<UTC start time>.hprof` when the JVM throws `OutOfMemoryError`. |
 | `-Drss=true` | Records the JVM's memory, thread and file descriptor counts to `/home/container/dumps/rss.csv` (see [RSS recording](#rss-recording)). |
 | `-Drssinterval=N` | RSS sample interval in seconds. Default `60`. |
@@ -79,6 +81,13 @@ Reading a graph:
 - Compare successive graphs to see which paths grow over time.
 
 With `-Ddiff=true`, every dump after the first one of a JVM run also gets `*.diff.*` reports rendered with `jeprof --base=<previous dump>`. It shows only the memory that was allocated and not freed between the two dumps, which is usually the fastest way to spot a leak.
+
+## Native memory leaks with async-profiler
+`-Dnativemem=true` loads [async-profiler](https://github.com/async-profiler/async-profiler) as a JVM agent in `nativemem` mode. It samples native allocations (every 128 KiB on average) together with the full Java and native stack, so a leak shows the Java code that caused it, for example the plugin method that opened an `Inflater` and never closed it.
+
+- A new recording starts every `-Dnativememinterval=N` seconds (default one hour) in `/home/container/dumps/nativemem/nativemem-<time>.jfr`.
+- Once a recording is finished, it is converted to `nativemem-<time>-leaks.html`: a flame graph of memory that was allocated during that recording and never freed.
+- jeprof and nativemem both hook native allocations, so `-Dnativemem=true` is disabled when `-Ddump=true` is set. Use nativemem to find the Java caller of a leak and jeprof when you need the allocator's own view.
 
 ## Native memory tracking
 With `-Dnmt=true`, `-XX:NativeMemoryTracking=summary` is inserted right after the `java` binary of the startup command (the command has to start with `java`). Once the JVM is up, an NMT baseline is taken, and every `-Dnmtinterval=N` seconds `jcmd <pid> VM.native_memory summary.diff` is written to `/home/container/dumps/nmt/nmt-<UTC timestamp>.txt`.
