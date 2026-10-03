@@ -106,6 +106,7 @@ jobs:
     name: "${{ matrix.vendor }}_${{ matrix.version }} (${{ matrix.arch }})"
     runs-on: ${{ matrix.runner }}
     needs: [matrix, allocators]
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
