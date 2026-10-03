@@ -6,6 +6,7 @@ LIB_DIR=/usr/local/lib/entrypoint
 . "$LIB_DIR/profiler.sh"
 . "$LIB_DIR/watcher.sh"
 . "$LIB_DIR/nmt.sh"
+. "$LIB_DIR/oom.sh"
 
 TZ=${TZ:-UTC}
 export TZ
@@ -41,6 +42,10 @@ select_allocator
 NMT_ENABLED=false
 if dprop_enabled nmt && enable_native_memory_tracking; then
     NMT_ENABLED=true
+fi
+
+if dprop_enabled oomdump; then
+    enable_oom_heap_dump
 fi
 
 log_info "$PARSED"

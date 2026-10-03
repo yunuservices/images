@@ -1,16 +1,9 @@
 # shellcheck shell=sh
-# Adds -XX:NativeMemoryTracking=summary right after the java binary.
 enable_native_memory_tracking() {
-    java_cmd=${PARSED%% *}
-    case "$java_cmd" in
-        java|*/java)
-            ;;
-        *)
-            log_error "-Dnmt=true needs the startup command to start with java, NMT disabled."
-            return 1
-            ;;
-    esac
-    PARSED="$java_cmd -XX:NativeMemoryTracking=summary${PARSED#"$java_cmd"}"
+    if ! add_jvm_options -XX:NativeMemoryTracking=summary; then
+        log_error "-Dnmt=true needs the startup command to start with java, NMT disabled."
+        return 1
+    fi
 }
 
 # Takes an NMT baseline once the JVM is up, then writes a summary diff against

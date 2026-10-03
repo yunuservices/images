@@ -77,4 +77,22 @@ if [ -n "$heap_file" ]; then
     fi
 fi
 
+# Runs a single-file program that fills the heap until it fails.
+cat > /tmp/Oom.java <<'EOF_JAVA'
+class Oom {
+    public static void main(String[] args) {
+        var blocks = new java.util.ArrayList<long[]>();
+        while (true) {
+            blocks.add(new long[1 << 20]);
+        }
+    }
+}
+EOF_JAVA
+(STARTUP="java -Doomdump=true -Xmx64m /tmp/Oom.java" sh /entrypoint.sh) >/dev/null 2>&1
+if ls "$DUMP_DIR"/oom/*.hprof >/dev/null 2>&1; then
+    pass "heap dump on OutOfMemoryError"
+else
+    fail "heap dump on OutOfMemoryError"
+fi
+
 exit "$failed"

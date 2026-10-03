@@ -33,6 +33,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Dnmt=true` | Starts the JVM with `-XX:NativeMemoryTracking=summary` and writes periodic NMT reports (see [Native memory tracking](#native-memory-tracking)). |
 | `-Dnmtinterval=N` | NMT report interval in seconds. Default `300`. |
+| `-Doomdump=true` | Writes a heap dump to `/home/container/dumps/oom/heap-<UTC start time>.hprof` when the JVM throws `OutOfMemoryError`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
 | `-Danalyse=stack` | Enables the watcher in stack mode: dumps are taken every interval and kept only when they contain the keyword. |
 | `-Dkeyword=X` | Trigger keyword for the watcher. In log mode the default is `Can't`, which matches Minecraft's "Can't keep up!" line; stack mode requires it. Underscores in the value become spaces, e.g. `-Dkeyword=Can't_keep_up!`. |
@@ -80,7 +81,7 @@ With `-Danalyse=stack -Dkeyword=X`, a thread dump is taken every `-Dinterval=N` 
 Thread traces pair well with the jeprof GIFs: the trace shows the JVM view (threads, locks, stacks) and the GIF shows the native view of the same moment.
 
 ## Storage warning
-Heap dumps, GIFs and thread traces accumulate on disk over time. Enable `-Ddump=true` / `-Danalyse=true` only while diagnosing an issue, and clean up the `dumps` directory afterwards. For long profiling runs, `-Dkeep=N` caps the number of heap dumps and GIFs on disk.
+Heap dumps, GIFs and thread traces accumulate on disk over time. An OOM heap dump is as large as the used heap, so `-Doomdump=true` needs free disk space of at least `-Xmx`. Enable `-Ddump=true` / `-Danalyse=true` only while diagnosing an issue, and clean up the `dumps` directory afterwards. For long profiling runs, `-Dkeep=N` caps the number of heap dumps and GIFs on disk.
 
 ## About musl
 *I excluded musl due to permanent resolver behavior differences (SERVFAIL-on-one-family, ndots) and slow CVE release cadence (1.2.6 ships with CVE-2026-40200/6042 open).*

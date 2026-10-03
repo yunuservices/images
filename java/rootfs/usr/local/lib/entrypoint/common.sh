@@ -33,6 +33,19 @@ dprop_enabled() {
     is_true "$(extract_dprop "$1")"
 }
 
+# Inserts JVM options right after the java binary of the startup command.
+add_jvm_options() {
+    java_cmd=${PARSED%% *}
+    case "$java_cmd" in
+        java|*/java)
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+    PARSED="$java_cmd $*${PARSED#"$java_cmd"}"
+}
+
 find_jvm_pid() {
     pid=$(pgrep -x java 2>/dev/null | head -n 1)
     if [ -z "$pid" ]; then
