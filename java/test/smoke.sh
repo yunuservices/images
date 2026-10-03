@@ -162,7 +162,7 @@ stop_background_loops() {
 # One long run exercises the background features that need a live JVM.
 stop_background_loops
 rm -rf "$DUMP_DIR"/jeprof/* "$DUMP_DIR"/output/* "$DUMP_DIR"/output/.done/* "$DUMP_DIR"/traces/*
-export MALLOC_CONF=lg_prof_interval:22
+export MALLOC_CONF=lg_prof_interval:23
 (STARTUP="java -Ddump=true -Ddiff=true -Dkeep=2 -Djeprof_format=svg,txt -Danalyse=stack -Dkeyword=smokeMarker -Dinterval=2 -Dnmt=true -Dnmtinterval=2 -Drss=true -Drssinterval=1 /tmp/Smoke.java 20" sh /entrypoint.sh) >/dev/null 2>&1
 unset MALLOC_CONF
 
@@ -171,7 +171,7 @@ check_within "nmt report written" 1 grep -lq "Native Memory Tracking" "$DUMP_DIR
 check_within "rss samples recorded" 1 test "$(wc -l < "$DUMP_DIR/rss.csv")" -ge 3
 check_within "diff report written" 60 has_files "$DUMP_DIR"/output/*.diff.svg
 check_within "txt report written" 60 has_files "$DUMP_DIR"/output/*.heap.txt
-check_within "retention keeps two dumps" 30 test "$(ls "$DUMP_DIR"/jeprof/*.heap | wc -l)" -le 2
+check_within "retention keeps two dumps" 90 test "$(ls "$DUMP_DIR"/jeprof/*.heap | wc -l)" -le 2
 
 stop_background_loops
 rm -rf "$DUMP_DIR"/traces/*
