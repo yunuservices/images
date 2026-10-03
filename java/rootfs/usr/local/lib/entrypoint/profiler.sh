@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Keep every node and edge so slow, small leaks stay visible in the graph.
 JEPROF_OPTS=${JEPROF_OPTS:---show_bytes --nodefraction=0 --edgefraction=0 --maxdegree=20}
 

@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 JEMALLOC_LIB=/usr/local/lib/libjemalloc.so
 MIMALLOC_LIB=/usr/local/lib/libmimalloc.so
 TCMALLOC_LIB=/usr/local/lib/libtcmalloc_minimal.so

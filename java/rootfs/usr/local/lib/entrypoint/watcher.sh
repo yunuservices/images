@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 trace_file_name() {
     printf '%s' "$DUMP_DIR/traces/trace-$(date -u +%Y%m%d-%H%M%S).txt"
 }

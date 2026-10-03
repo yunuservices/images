@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Adds -XX:NativeMemoryTracking=summary right after the java binary.
 enable_native_memory_tracking() {
     java_cmd=${PARSED%% *}

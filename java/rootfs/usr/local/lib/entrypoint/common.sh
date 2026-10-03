@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 DUMP_DIR=/home/container/dumps
 
 log_info() {
