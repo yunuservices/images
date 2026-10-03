@@ -183,7 +183,7 @@ stop_background_loops() {
 stop_background_loops
 rm -rf "$DUMP_DIR"/jeprof/* "$DUMP_DIR"/output/* "$DUMP_DIR"/output/.done/* "$DUMP_DIR"/traces/*
 export MALLOC_CONF=lg_prof_interval:23
-(STARTUP="java -Ddump=true -Ddiff=true -Dkeep=2 -Djeprof_format=svg,txt -Danalyse=stack -Dkeyword=smokeMarker -Dinterval=2 -Dnmt=true -Dnmtinterval=2 -Drss=true -Drssinterval=1 /tmp/Smoke.java 20" sh /entrypoint.sh) >/dev/null 2>&1
+(STARTUP="java -Ddump=true -Ddiff=true -Djeprof_format=svg,txt -Danalyse=stack -Dkeyword=smokeMarker -Dinterval=2 -Dnmt=true -Dnmtinterval=2 -Drss=true -Drssinterval=1 /tmp/Smoke.java 20" sh /entrypoint.sh) >/dev/null 2>&1
 unset MALLOC_CONF
 
 check_within "stack watcher keeps matching dumps" 1 file_contains smokeMarker "$DUMP_DIR/traces/trace-*.txt"
@@ -191,7 +191,23 @@ check_within "nmt report written" 1 file_contains "Native Memory Tracking" "$DUM
 check_within "rss samples recorded" 1 line_count_at_least "$DUMP_DIR/rss.csv" 3
 check_within "diff report written" 60 has_files "$DUMP_DIR/output/*.diff.svg"
 check_within "txt report written" 60 has_files "$DUMP_DIR/output/*.heap.txt"
-check_within "retention keeps two dumps" 90 heap_dumps_at_most 2
+
+# Retention runs after the profiler loop has converted every dump, so it is
+# checked with already converted dumps of an older run to stay independent of
+# conversion time.
+stop_background_loops
+rm -rf "$DUMP_DIR"/jeprof/* "$DUMP_DIR"/output/.done/*
+for seq in 0 1 2 3; do
+    name="jeprof-20000101-000000.1.$seq.i$seq.heap"
+    : > "$DUMP_DIR/jeprof/$name"
+    : > "$DUMP_DIR/output/.done/$name"
+done
+(STARTUP="java -Ddump=true -Dkeep=2 -version" sh /entrypoint.sh) >/dev/null 2>&1
+check_within "retention keeps two dumps" 15 heap_dumps_at_most 2
+if ! heap_dumps_at_most 2; then
+    ls -l "$DUMP_DIR"/jeprof
+    tail -n 20 "$DUMP_DIR/loop.log" 2>/dev/null
+fi
 
 stop_background_loops
 rm -rf "$DUMP_DIR"/traces/*
