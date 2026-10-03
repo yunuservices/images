@@ -15,6 +15,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | --- | --- |
 | `-Djemalloc=true` | Loads `libjemalloc` via `LD_PRELOAD` and exports a default `MALLOC_CONF` with RSS tuning: `background_thread:true` (a background thread purges freed memory), `dirty_decay_ms:1000` (dirty pages are returned to the OS after ~1s), `muzzy_decay_ms:0` (muzzy pages are returned immediately), `tcache_max:1024` (caps the per-thread cache size). |
 | `-Ddump=true` | Implies `-Djemalloc=true`. Adds profiling options to `MALLOC_CONF`: `prof:true` (enables heap profiling), `lg_prof_interval:31` (a heap dump roughly every 2 GiB of allocation), `lg_prof_sample:17` (~128 KiB sampling interval), `prof_prefix:/home/container/dumps/jeprof/jeprof-<UTC start time>` (dump files are written as `jeprof-<start>.<pid>.<seq>.i<n>.heap` in that directory, so restarts never overwrite older dumps). |
+| `-Ddiff=true` | With `-Ddump=true`, also renders each heap dump against the previous dump of the same JVM run (see [Native heap profiling](#native-heap-profiling-jeprof-gifs)). |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
@@ -40,6 +41,8 @@ Reading a GIF:
 - Bigger nodes mean more retained native memory at that call path.
 - The key rule: allocation paths that reach `je_malloc_default` **without** passing through `os#malloc` are strong leak candidates. They bypass the JVM's collector and can never be freed by GC.
 - Compare successive GIFs to see which paths grow over time.
+
+With `-Ddiff=true`, every dump after the first one of a JVM run also gets a `*.diff.gif` rendered with `jeprof --base=<previous dump>`. It shows only the memory that was allocated and not freed between the two dumps, which is usually the fastest way to spot a leak.
 
 ## Thread dumps
 The watcher has two modes. Both write matches to `/home/container/dumps/traces/trace-<UTC timestamp>.txt` using `jcmd ... Thread.print`, with `jstack` as fallback.
