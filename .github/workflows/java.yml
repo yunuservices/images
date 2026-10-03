@@ -252,3 +252,24 @@ jobs:
           IMAGE=ghcr.io/${{ github.repository_owner }}/images
           DIGEST=$(docker buildx imagetools inspect "$IMAGE:${{ matrix.vendor }}_${{ matrix.version }}" --format '{{json .Manifest}}' | jq -r .digest)
           cosign sign --yes "$IMAGE@$DIGEST"
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-24.04
+    needs: merge
+    if: github.event_name != 'pull_request'
+    permissions:
+      packages: write
+    steps:
+      - name: Delete untagged image versions
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: images
+          delete-untagged: true
+          delete-orphaned-images: true
+          delete-partial-images: true
+          delete-ghost-images: true
+          older-than: 1 day
+          validate: true
+          # Dry run until the first logs confirm only unused versions are listed.
+          dry-run: true
