@@ -4,7 +4,7 @@ set -eux
 # Runs on Amazon Linux 2023 (glibc 2.34), the oldest glibc among the base
 # images, so the resulting libraries load on every vendor image.
 JEMALLOC_VERSION=5.4.0
-MIMALLOC_VERSION=v3.4.5
+MIMALLOC_VERSION=v3.5.3
 GPERFTOOLS_VERSION=gperftools-2.18.1
 
 dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool cmake libatomic
