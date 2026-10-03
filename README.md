@@ -19,6 +19,8 @@ cosign verify ghcr.io/yunuservices/images:temurin_21 \
 
 Each build run also lists fixable HIGH and CRITICAL vulnerabilities per image in its job summary (Trivy).
 
+All tags are rebuilt every Monday at 04:00 UTC, so security updates of the base images reach the tags without a new commit.
+
 ## Runtime Switches
 Startup switches are passed as JVM system properties. They can be combined unless noted otherwise.
 

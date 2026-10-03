@@ -2,6 +2,9 @@ name: build java images
 
 on:
   workflow_dispatch:
+  # Weekly rebuild so base image security updates reach every tag.
+  schedule:
+    - cron: "0 4 * * 1"
   push:
     branches:
       - main
