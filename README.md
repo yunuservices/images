@@ -2,10 +2,10 @@
 
 ## Supported Vendors and Versions
 - Format: `ghcr.io/yunuservices/images:{VENDOR}_{VERSION}`
-- `corretto`: `17`, `21`, `25`, `26`
+- `corretto`: `17`, `21`, `25`, `26`, `27`
 - `zulu`: `17`, `21`, `25`, `26`
-- `liberica`: `17`, `21`, `25`, `26`
-- `temurin`: `17`, `21`, `25`, `26`
+- `liberica`: `17`, `21`, `25`, `26`, `27`
+- `temurin`: `17`, `21`, `25`, `26`, `27`
 - `graalvm`: `17`, `21`, `25`
 
 ## Runtime Switches
