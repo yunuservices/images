@@ -24,7 +24,7 @@ concurrency:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -47,7 +47,7 @@ jobs:
 
   matrix:
     name: Matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}                   # build legs (arch included)
       matrix_images: ${{ steps.set-matrix.outputs.matrix_images }}     # merge legs (image only)
@@ -60,7 +60,7 @@ jobs:
         run: |
           IMAGES=$(jq -c '[to_entries[] | .key as $vendor | .value | to_entries[]
             | {vendor: $vendor, version: .key, base: .value}]' java/versions.json)
-          MATRIX=$(printf '%s' "$IMAGES" | jq -c '[.[] | (. + {arch: "amd64", runner: "ubuntu-latest"}),
+          MATRIX=$(printf '%s' "$IMAGES" | jq -c '[.[] | (. + {arch: "amd64", runner: "ubuntu-24.04"}),
             (. + {arch: "arm64", runner: "ubuntu-24.04-arm"})]')
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
           echo "matrix_images={\"include\":$(printf '%s' "$IMAGES" | jq -c 'map(del(.base))')}" >> "$GITHUB_OUTPUT"
@@ -73,7 +73,7 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
           - arch: arm64
             runner: ubuntu-24.04-arm
     steps:
@@ -183,7 +183,7 @@ jobs:
 
   merge:
     name: "merge ${{ matrix.vendor }}_${{ matrix.version }}"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [matrix, build]
     if: github.event_name != 'pull_request'
     permissions:
