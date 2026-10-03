@@ -12,7 +12,7 @@ COPY --from=allocator-builder /out/ /
 FROM ${BASE_IMAGE}
 LABEL org.opencontainers.image.authors="yunuservices"
 
-COPY ./entrypoint.sh /entrypoint.sh
+COPY rootfs/ /
 COPY --from=allocators /libjemalloc.so /usr/local/lib/libjemalloc.so
 COPY --from=allocators --chmod=0755 /jeprof /usr/local/bin/jeprof
 COPY --from=allocators /libmimalloc.so /usr/local/lib/libmimalloc.so

@@ -39,7 +39,7 @@ jobs:
 
       - name: ShellCheck
         # Only fail on real errors; style/warning notes stay advisory.
-        run: shellcheck --severity=error java/entrypoint.sh java/build/*.sh
+        run: shellcheck --severity=error java/rootfs/entrypoint.sh java/rootfs/usr/local/lib/entrypoint/*.sh java/build/*.sh
 
       - name: Hadolint
         # Fail on warnings and errors, ignore info/style suggestions.
