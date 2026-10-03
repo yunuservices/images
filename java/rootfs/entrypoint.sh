@@ -43,8 +43,11 @@ if [ "$DUMP_ENABLED" = true ] && [ "$SELECTED_ALLOC" = "jemalloc" ]; then
     start_heap_profiler
 fi
 
-if dprop_enabled analyse; then
-    start_thread_watcher
+ANALYSE_MODE=$(to_lower "$(extract_dprop analyse)")
+if [ "$ANALYSE_MODE" = stack ]; then
+    start_thread_watcher stack
+elif is_true "$ANALYSE_MODE"; then
+    start_thread_watcher log
 fi
 
 if dprop_enabled numa; then

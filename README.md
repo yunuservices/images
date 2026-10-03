@@ -17,9 +17,10 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Ddump=true` | Implies `-Djemalloc=true`. Adds profiling options to `MALLOC_CONF`: `prof:true` (enables heap profiling), `lg_prof_interval:31` (a heap dump roughly every 2 GiB of allocation), `lg_prof_sample:17` (~128 KiB sampling interval), `prof_prefix:/home/container/dumps/jeprof/jeprof` (dump files are written as `jeprof.<pid>.<seq>.i<n>.heap` in that directory). |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
-| `-Danalyse=true` | Enables a background thread-dump watcher (see [Thread dumps](#thread-dumps)). |
-| `-Dkeyword=X` | Trigger keyword for the watcher. Default `Can't`, which matches Minecraft's "Can't keep up!" line. Underscores in the value become spaces, e.g. `-Dkeyword=Can't_keep_up!`. |
-| `-Dinterval=N` | Watcher scan interval in seconds. Default `5`. |
+| `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
+| `-Danalyse=stack` | Enables the watcher in stack mode: dumps are taken every interval and kept only when they contain the keyword. |
+| `-Dkeyword=X` | Trigger keyword for the watcher. In log mode the default is `Can't`, which matches Minecraft's "Can't keep up!" line; stack mode requires it. Underscores in the value become spaces, e.g. `-Dkeyword=Can't_keep_up!`. |
+| `-Dinterval=N` | Watcher interval in seconds. Default `5` in log mode, `30` in stack mode. |
 
 Notes:
 - `jemalloc` and `mimalloc` are mutually exclusive. Setting both is rejected with a warning; `-Ddump=true` counts as `jemalloc` for this check.
@@ -41,11 +42,17 @@ Reading a GIF:
 - Compare successive GIFs to see which paths grow over time.
 
 ## Thread dumps
-With `-Danalyse=true`, a background watcher scans the server log for a trigger keyword:
+The watcher has two modes. Both write matches to `/home/container/dumps/traces/trace-<UTC timestamp>.txt` using `jcmd ... Thread.print`, with `jstack` as fallback.
+
+### Log mode
+With `-Danalyse=true`, the watcher scans the server log for a trigger keyword:
 - The log file is read from `$LOG_FILE`; the default is `/home/container/logs/latest.log`.
 - The keyword defaults to `Can't` (matches Minecraft's "Can't keep up!" line); underscores in `-Dkeyword=X` become spaces.
 - Scans run every `-Dinterval=N` seconds (default `5`). Lower intervals catch short spikes more reliably.
-- On a match, a JVM thread dump is written to `/home/container/dumps/traces/trace-<UTC timestamp>.txt` using `jcmd ... Thread.print`, with `jstack` as fallback.
+- On a match, a JVM thread dump is written.
+
+### Stack mode
+With `-Danalyse=stack -Dkeyword=X`, a thread dump is taken every `-Dinterval=N` seconds (default `30`) and kept only when it contains the keyword. Use it to catch the Java code that calls into native memory, e.g. `-Dkeyword=java.util.zip.Inflater` for unclosed inflaters. Each dump briefly pauses the JVM at a safepoint, so avoid very low intervals on busy servers.
 
 Thread traces pair well with the jeprof GIFs: the trace shows the JVM view (threads, locks, stacks) and the GIF shows the native view of the same moment.
 
