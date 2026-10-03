@@ -81,10 +81,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build allocators
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./java
           file: ./java/Dockerfile
@@ -95,7 +95,7 @@ jobs:
           outputs: type=local,dest=allocators
 
       - name: Upload allocators
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: allocators-${{ matrix.arch }}
           path: allocators/*
@@ -118,24 +118,24 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download allocators
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: allocators-${{ matrix.arch }}
           path: allocators
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GHCR
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build for smoke test
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./java
           file: ./java/Dockerfile
@@ -151,7 +151,7 @@ jobs:
 
       - name: Build and push by digest
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ./java
           file: ./java/Dockerfile
@@ -174,7 +174,7 @@ jobs:
 
       - name: Upload digest
         if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digests-${{ matrix.vendor }}-${{ matrix.version }}-${{ matrix.arch }}
           path: /tmp/digests/*
@@ -195,17 +195,17 @@ jobs:
 
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: digests-${{ matrix.vendor }}-${{ matrix.version }}-*
           path: /tmp/digests
           merge-multiple: true
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Login to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
