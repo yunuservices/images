@@ -35,6 +35,8 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dnmt=true` | Starts the JVM with `-XX:NativeMemoryTracking=summary` and writes periodic NMT reports (see [Native memory tracking](#native-memory-tracking)). |
 | `-Dnmtinterval=N` | NMT report interval in seconds. Default `300`. |
 | `-Doomdump=true` | Writes a heap dump to `/home/container/dumps/oom/heap-<UTC start time>.hprof` when the JVM throws `OutOfMemoryError`. |
+| `-Drss=true` | Records the JVM's memory, thread and file descriptor counts to `/home/container/dumps/rss.csv` (see [RSS recording](#rss-recording)). |
+| `-Drssinterval=N` | RSS sample interval in seconds. Default `60`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
 | `-Danalyse=stack` | Enables the watcher in stack mode: dumps are taken every interval and kept only when they contain the keyword. |
 | `-Dkeyword=X` | Trigger keyword for the watcher. In log mode the default is `Can't`, which matches Minecraft's "Can't keep up!" line; stack mode requires it. Underscores in the value become spaces, e.g. `-Dkeyword=Can't_keep_up!`. |
@@ -51,6 +53,19 @@ glibc malloc creates up to 8 arenas per CPU so threads rarely share one. A JVM r
 - If neither allocator switch is enabled, the image runs with default `malloc`.
 - If more than one allocator switch is set, allocator selection is rejected and a warning is printed.
 - If `-Dnuma=true` is set but `numactl` is unavailable, startup continues without NUMA policy.
+
+## RSS recording
+With `-Drss=true`, one row per `-Drssinterval=N` seconds is appended to `/home/container/dumps/rss.csv`:
+
+| Column | Meaning |
+| --- | --- |
+| `vm_rss_kb` | Total resident memory of the JVM process. |
+| `rss_anon_kb` | Anonymous memory: Java heap, metaspace and native allocations. Leaks show up here. |
+| `rss_file_kb` | File-backed memory such as mapped jars and shared libraries. |
+| `threads` | Thread count. Steady growth points to a thread leak. |
+| `open_fds` | Open file descriptors. Steady growth points to unclosed files or sockets. |
+
+It is the cheapest way to tell whether there is a leak at all and where to look next: if `rss_anon_kb` keeps growing while NMT stays flat, the leak is native and `-Ddump=true` will show it; if NMT grows too, the leak is inside the JVM. A day of samples at the default interval is about 100 KiB.
 
 ## Native heap profiling (jeprof GIFs)
 With `-Ddump=true`, raw heap dumps are written to `/home/container/dumps/jeprof/*.heap` (each typically 50-200 KiB). A background loop converts every new dump with `jeprof --gif` into `/home/container/dumps/output/*.gif` (each roughly 200-300 KiB). `jeprof` and `graphviz` ship in the image, so no extra tooling is needed.

@@ -7,6 +7,7 @@ LIB_DIR=/usr/local/lib/entrypoint
 . "$LIB_DIR/watcher.sh"
 . "$LIB_DIR/nmt.sh"
 . "$LIB_DIR/oom.sh"
+. "$LIB_DIR/rss.sh"
 
 TZ=${TZ:-UTC}
 export TZ
@@ -59,6 +60,10 @@ fi
 
 if [ "$NMT_ENABLED" = true ]; then
     start_nmt_reporter
+fi
+
+if dprop_enabled rss; then
+    start_rss_recorder
 fi
 
 ANALYSE_MODE=$(to_lower "$(extract_dprop analyse)")
