@@ -211,6 +211,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.matrix.outputs.matrix_images) }}
@@ -239,3 +240,12 @@ jobs:
           docker buildx imagetools create -t \
             ghcr.io/${{ github.repository_owner }}/images:${{ matrix.vendor }}_${{ matrix.version }} \
             $(printf 'ghcr.io/${{ github.repository_owner }}/images@sha256:%s ' *)
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository_owner }}/images
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE:${{ matrix.vendor }}_${{ matrix.version }}" --format '{{json .Manifest}}' | jq -r .digest)
+          cosign sign --yes "$IMAGE@$DIGEST"

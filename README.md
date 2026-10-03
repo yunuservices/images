@@ -8,6 +8,17 @@
 - `temurin`: `17`, `21`, `25`, `26`, `27`
 - `graalvm`: `17`, `21`, `25`
 
+## Verifying images
+Every tag is signed with keyless [cosign](https://github.com/sigstore/cosign) from GitHub Actions:
+
+```sh
+cosign verify ghcr.io/yunuservices/images:temurin_21 \
+  --certificate-identity-regexp '^https://github.com/yunuservices/images/' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Each build run also lists fixable HIGH and CRITICAL vulnerabilities per image in its job summary (Trivy).
+
 ## Runtime Switches
 Startup switches are passed as JVM system properties. They can be combined unless noted otherwise.
 
