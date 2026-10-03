@@ -150,6 +150,27 @@ jobs:
       - name: Smoke test
         run: docker run --rm -i --entrypoint /bin/sh images:smoke -s < java/test/smoke.sh
 
+      - name: Scan for vulnerabilities
+        if: matrix.arch == 'amd64'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: images:smoke
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          output: trivy.txt
+          exit-code: "0"
+
+      - name: Publish vulnerability report
+        if: matrix.arch == 'amd64'
+        run: |
+          {
+            echo "### Trivy: ${{ matrix.vendor }}_${{ matrix.version }}"
+            echo '```'
+            cat trivy.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v7
