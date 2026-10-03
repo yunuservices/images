@@ -51,6 +51,12 @@ line_count_at_least() {
     [ "$(wc -l < "$1" 2>/dev/null || echo 0)" -ge "$2" ]
 }
 
+# Dump names start with jeprof-<start>.<pid>, so one value means only the JVM
+# wrote dumps and none of the background helpers did.
+heap_dumps_from_one_process() {
+    [ "$(ls "$DUMP_DIR"/jeprof/*.heap 2>/dev/null | sed 's#.*/##' | cut -d. -f1-2 | sort -u | wc -l)" -eq 1 ]
+}
+
 heap_dumps_at_most() {
     [ "$(ls "$DUMP_DIR"/jeprof/*.heap 2>/dev/null | wc -l)" -le "$1" ]
 }
@@ -191,6 +197,7 @@ check_within "nmt report written" 1 file_contains "Native Memory Tracking" "$DUM
 check_within "rss samples recorded" 1 line_count_at_least "$DUMP_DIR/rss.csv" 3
 check_within "diff report written" 60 has_files "$DUMP_DIR/output/*.diff.svg"
 check_within "txt report written" 60 has_files "$DUMP_DIR/output/*.heap.txt"
+check_within "only the jvm writes heap dumps" 1 heap_dumps_from_one_process
 
 # Retention runs after the profiler loop has converted every dump, so it is
 # checked with already converted dumps of an older run to stay independent of
