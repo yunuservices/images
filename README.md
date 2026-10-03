@@ -18,6 +18,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Ddiff=true` | With `-Ddump=true`, also renders each heap dump against the previous dump of the same JVM run (see [Native heap profiling](#native-heap-profiling-jeprof-gifs)). |
 | `-Dkeep=N` | With `-Ddump=true`, keeps only the newest `N` converted heap dumps and deletes older dumps together with their GIFs. Unset keeps everything. |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
+| `-Dtcmalloc=true` | Loads `tcmalloc_minimal` from gperftools via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
 | `-Danalyse=stack` | Enables the watcher in stack mode: dumps are taken every interval and kept only when they contain the keyword. |
@@ -25,12 +26,12 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Dinterval=N` | Watcher interval in seconds. Default `5` in log mode, `30` in stack mode. |
 
 Notes:
-- `jemalloc` and `mimalloc` are mutually exclusive. Setting both is rejected with a warning; `-Ddump=true` counts as `jemalloc` for this check.
+- `jemalloc`, `mimalloc` and `tcmalloc` are mutually exclusive. Setting more than one is rejected with a warning; `-Ddump=true` counts as `jemalloc` for this check.
 - If a custom `MALLOC_CONF` env var is set, the image defaults are written first and the user value is appended last, so user options override the image defaults.
 
 ## Default Behavior
 - If neither allocator switch is enabled, the image runs with default `malloc`.
-- If both `-Djemalloc=true` and `-Dmimalloc=true` are set, allocator selection is rejected and a warning is printed.
+- If more than one allocator switch is set, allocator selection is rejected and a warning is printed.
 - If `-Dnuma=true` is set but `numactl` is unavailable, startup continues without NUMA policy.
 
 ## Native heap profiling (jeprof GIFs)

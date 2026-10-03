@@ -25,9 +25,11 @@ PARSED=$(printf '%s' "${STARTUP}" | sed -e 's/{{/${/g' -e 's/}}/}/g' | eval echo
 
 MIMALLOC_ENABLED=false
 JEMALLOC_ENABLED=false
+TCMALLOC_ENABLED=false
 DUMP_ENABLED=false
 dprop_enabled mimalloc && MIMALLOC_ENABLED=true
 dprop_enabled jemalloc && JEMALLOC_ENABLED=true
+dprop_enabled tcmalloc && TCMALLOC_ENABLED=true
 if dprop_enabled dump; then
     DUMP_ENABLED=true
     JEMALLOC_ENABLED=true

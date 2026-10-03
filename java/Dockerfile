@@ -16,6 +16,7 @@ COPY rootfs/ /
 COPY --from=allocators /libjemalloc.so /usr/local/lib/libjemalloc.so
 COPY --from=allocators --chmod=0755 /jeprof /usr/local/bin/jeprof
 COPY --from=allocators /libmimalloc.so /usr/local/lib/libmimalloc.so
+COPY --from=allocators /libtcmalloc_minimal.so /usr/local/lib/libtcmalloc_minimal.so
 
 COPY build/runtime-setup.sh /usr/local/bin/runtime-setup.sh
 RUN sh /usr/local/bin/runtime-setup.sh && rm -f /usr/local/bin/runtime-setup.sh

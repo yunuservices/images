@@ -5,6 +5,7 @@ set -eux
 # images, so the resulting libraries load on every vendor image.
 JEMALLOC_VERSION=5.3.0
 MIMALLOC_VERSION=v3.4.5
+GPERFTOOLS_VERSION=gperftools-2.18.1
 
 dnf install -y ca-certificates git tar findutils gcc gcc-c++ make autoconf automake libtool cmake libatomic
 dnf clean all
@@ -30,3 +31,14 @@ cmake --build /tmp/mimalloc/build -j"$CPU_COUNT"
 MIMALLOC_LIB="$(find /tmp/mimalloc/build -type f -name 'libmimalloc.so*' | head -n1)"
 [ -n "$MIMALLOC_LIB" ] || { echo "failed to resolve mimalloc shared library"; exit 1; }
 cp "$MIMALLOC_LIB" /out/libmimalloc.so
+
+# Only tcmalloc_minimal is built; heap profiling is covered by jemalloc.
+git clone --depth 1 --branch "$GPERFTOOLS_VERSION" https://github.com/gperftools/gperftools.git /tmp/gperftools
+cd /tmp/gperftools
+./autogen.sh
+./configure --enable-minimal --disable-static
+make -j"$CPU_COUNT"
+cd /
+TCMALLOC_LIB="$(find /tmp/gperftools/.libs -type f -name 'libtcmalloc_minimal.so*' | head -n1)"
+[ -n "$TCMALLOC_LIB" ] || { echo "failed to resolve tcmalloc shared library"; exit 1; }
+cp "$TCMALLOC_LIB" /out/libtcmalloc_minimal.so
