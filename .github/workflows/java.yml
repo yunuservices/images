@@ -65,10 +65,47 @@ jobs:
           echo "matrix={\"include\":$MATRIX}" >> "$GITHUB_OUTPUT"
           echo "matrix_images={\"include\":$(printf '%s' "$IMAGES" | jq -c 'map(del(.base))')}" >> "$GITHUB_OUTPUT"
 
+  allocators:
+    name: "allocators (${{ matrix.arch }})"
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build allocators
+        uses: docker/build-push-action@v6
+        with:
+          context: ./java
+          file: ./java/Dockerfile
+          target: allocators
+          platforms: linux/${{ matrix.arch }}
+          cache-from: type=gha,scope=allocators-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=allocators-${{ matrix.arch }}
+          outputs: type=local,dest=allocators
+
+      - name: Upload allocators
+        uses: actions/upload-artifact@v4
+        with:
+          name: allocators-${{ matrix.arch }}
+          path: allocators/*
+          if-no-files-found: error
+          retention-days: 1
+
   build:
     name: "${{ matrix.vendor }}_${{ matrix.version }} (${{ matrix.arch }})"
     runs-on: ${{ matrix.runner }}
-    needs: matrix
+    needs: [matrix, allocators]
     permissions:
       contents: read
       packages: write
@@ -79,6 +116,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Download allocators
+        uses: actions/download-artifact@v4
+        with:
+          name: allocators-${{ matrix.arch }}
+          path: allocators
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -98,6 +141,7 @@ jobs:
           context: ./java
           file: ./java/Dockerfile
           build-args: BASE_IMAGE=${{ matrix.base }}
+          build-contexts: allocators=./allocators
           platforms: linux/${{ matrix.arch }}
           push: ${{ github.event_name != 'pull_request' }}
           provenance: true
