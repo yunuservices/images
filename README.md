@@ -16,6 +16,7 @@ Startup switches are passed as JVM system properties. They can be combined unles
 | `-Djemalloc=true` | Loads `libjemalloc` via `LD_PRELOAD` and exports a default `MALLOC_CONF` with RSS tuning: `background_thread:true` (a background thread purges freed memory), `dirty_decay_ms:1000` (dirty pages are returned to the OS after ~1s), `muzzy_decay_ms:0` (muzzy pages are returned immediately), `tcache_max:1024` (caps the per-thread cache size). |
 | `-Ddump=true` | Implies `-Djemalloc=true`. Adds profiling options to `MALLOC_CONF`: `prof:true` (enables heap profiling), `lg_prof_interval:31` (a heap dump roughly every 2 GiB of allocation), `lg_prof_sample:17` (~128 KiB sampling interval), `prof_prefix:/home/container/dumps/jeprof/jeprof-<UTC start time>` (dump files are written as `jeprof-<start>.<pid>.<seq>.i<n>.heap` in that directory, so restarts never overwrite older dumps). |
 | `-Ddiff=true` | With `-Ddump=true`, also renders each heap dump against the previous dump of the same JVM run (see [Native heap profiling](#native-heap-profiling-jeprof-gifs)). |
+| `-Dkeep=N` | With `-Ddump=true`, keeps only the newest `N` converted heap dumps and deletes older dumps together with their GIFs. Unset keeps everything. |
 | `-Dmimalloc=true` | Loads `mimalloc` via `LD_PRELOAD`. Performance allocator; no profiling support. |
 | `-Dnuma=true` | Runs the startup command with `numactl --interleave=all`. |
 | `-Danalyse=true` | Enables a background thread-dump watcher that reacts to the server log (see [Thread dumps](#thread-dumps)). |
@@ -60,7 +61,7 @@ With `-Danalyse=stack -Dkeyword=X`, a thread dump is taken every `-Dinterval=N` 
 Thread traces pair well with the jeprof GIFs: the trace shows the JVM view (threads, locks, stacks) and the GIF shows the native view of the same moment.
 
 ## Storage warning
-Heap dumps, GIFs and thread traces accumulate on disk over time. Enable `-Ddump=true` / `-Danalyse=true` only while diagnosing an issue, and clean up the `dumps` directory afterwards.
+Heap dumps, GIFs and thread traces accumulate on disk over time. Enable `-Ddump=true` / `-Danalyse=true` only while diagnosing an issue, and clean up the `dumps` directory afterwards. For long profiling runs, `-Dkeep=N` caps the number of heap dumps and GIFs on disk.
 
 ## About musl
 *I excluded musl due to permanent resolver behavior differences (SERVFAIL-on-one-family, ndots) and slow CVE release cadence (1.2.6 ships with CVE-2026-40200/6042 open).*

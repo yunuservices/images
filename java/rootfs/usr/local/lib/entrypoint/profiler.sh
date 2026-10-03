@@ -12,6 +12,17 @@ run_id() {
     printf '%s' "${1##*/}" | cut -d. -f1-2
 }
 
+# Deletes all but the newest $1 converted dumps together with their GIFs.
+prune_heap_dumps() {
+    count=$(list_heap_dumps | wc -l)
+    [ "$count" -gt "$1" ] || return 0
+    list_heap_dumps | head -n $((count - $1)) | while read -r heap_file; do
+        name=${heap_file##*/}
+        [ -f "$DUMP_DIR/output/.done/$name" ] || continue
+        rm -f "$heap_file" "$DUMP_DIR/output/$name.gif" "$DUMP_DIR/output/$name.diff.gif" "$DUMP_DIR/output/.done/$name"
+    done
+}
+
 render_gif() {
     # shellcheck disable=SC2086
     jeprof $JEPROF_OPTS --gif "$@"
@@ -33,6 +44,16 @@ start_heap_profiler() {
         log_info "jeprof diff GIFs enabled"
     fi
 
+    keep=$(extract_dprop keep)
+    case "$keep" in
+        ''|*[!0-9]*|0)
+            keep=""
+            ;;
+        *)
+            log_info "keeping the newest $keep heap dumps"
+            ;;
+    esac
+
     (
         java_bin=$(readlink -f "$(command -v java)")
         [ -n "$java_bin" ] || exit 0
@@ -52,6 +73,7 @@ start_heap_profiler() {
                 previous=$heap_file
             done
             [ -d "$DUMP_DIR" ] || exit 0
+            [ -z "$keep" ] || prune_heap_dumps "$keep"
             sleep 10 || exit 0
         done
     ) >> "$DUMP_DIR/loop.log" 2>&1 &
