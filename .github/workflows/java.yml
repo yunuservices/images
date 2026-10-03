@@ -39,7 +39,7 @@ jobs:
 
       - name: ShellCheck
         # Only fail on real errors; style/warning notes stay advisory.
-        run: shellcheck --severity=error java/rootfs/entrypoint.sh java/rootfs/usr/local/lib/entrypoint/*.sh java/build/*.sh
+        run: shellcheck --severity=error java/rootfs/entrypoint.sh java/rootfs/usr/local/lib/entrypoint/*.sh java/build/*.sh java/test/*.sh
 
       - name: Hadolint
         # Fail on warnings and errors, ignore info/style suggestions.
@@ -133,6 +133,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: ./java
+          file: ./java/Dockerfile
+          build-args: BASE_IMAGE=${{ matrix.base }}
+          build-contexts: allocators=./allocators
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          tags: images:smoke
+          cache-from: type=gha,scope=${{ matrix.vendor }}-${{ matrix.version }}-${{ matrix.arch }}
+
+      - name: Smoke test
+        run: docker run --rm -i --entrypoint /bin/sh images:smoke -s < java/test/smoke.sh
 
       - name: Build and push by digest
         id: build
