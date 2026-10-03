@@ -53,18 +53,18 @@ fi
 
 if [ -n "$heap_file" ]; then
     # The profiler loop converts dumps every 10 seconds.
-    gif_found=false
+    report_found=false
     for _ in 1 2 3 4 5 6; do
-        if ls "$DUMP_DIR"/output/*.gif >/dev/null 2>&1; then
-            gif_found=true
+        if ls "$DUMP_DIR"/output/*.svg >/dev/null 2>&1; then
+            report_found=true
             break
         fi
         sleep 5
     done
-    if [ "$gif_found" = true ]; then
-        pass "heap dump converted to gif"
+    if [ "$report_found" = true ]; then
+        pass "heap dump converted to svg"
     else
-        fail "heap dump converted to gif"
+        fail "heap dump converted to svg"
         cat "$DUMP_DIR/loop.log" 2>/dev/null
     fi
 

@@ -13,36 +13,71 @@ run_id() {
     printf '%s' "${1##*/}" | cut -d. -f1-2
 }
 
-# Deletes all but the newest $1 converted dumps together with their GIFs.
+# Deletes all but the newest $1 converted dumps together with their reports.
 prune_heap_dumps() {
     count=$(list_heap_dumps | wc -l)
     [ "$count" -gt "$1" ] || return 0
     list_heap_dumps | head -n $((count - $1)) | while read -r heap_file; do
         name=${heap_file##*/}
         [ -f "$DUMP_DIR/output/.done/$name" ] || continue
-        rm -f "$heap_file" "$DUMP_DIR/output/$name.gif" "$DUMP_DIR/output/$name.diff.gif" "$DUMP_DIR/output/.done/$name"
+        rm -f "$heap_file" "$DUMP_DIR/output/$name".* "$DUMP_DIR/output/.done/$name"
     done
 }
 
-render_gif() {
-    # shellcheck disable=SC2086
-    jeprof $JEPROF_OPTS --gif "$@"
+# Renders one heap dump into every requested format. Arguments: output path
+# without extension, then the jeprof arguments.
+render_reports() {
+    output=$1
+    shift
+    status=0
+    for format in $JEPROF_FORMATS; do
+        case "$format" in
+            txt)
+                flag=--text
+                ;;
+            *)
+                flag=--$format
+                ;;
+        esac
+        # shellcheck disable=SC2086
+        jeprof $JEPROF_OPTS "$flag" "$@" > "$output.$format" || status=1
+    done
+    return "$status"
 }
 
-# Converts every new jemalloc heap dump into a GIF in the background. With
+# Reads -Djeprof_format=svg,gif,txt into JEPROF_FORMATS. Defaults to svg.
+resolve_jeprof_formats() {
+    JEPROF_FORMATS=""
+    for format in $(extract_dprop jeprof_format | tr ',' ' '); do
+        case "$format" in
+            svg|gif|txt)
+                JEPROF_FORMATS="$JEPROF_FORMATS $format"
+                ;;
+            *)
+                log_error "Unknown jeprof format $format, use svg, gif or txt."
+                ;;
+        esac
+    done
+    [ -n "$JEPROF_FORMATS" ] || JEPROF_FORMATS=svg
+}
+
+# Converts every new jemalloc heap dump into reports in the background. With
 # diff enabled, each dump is also rendered against the previous dump of the
 # same JVM so only the growth between them shows up.
 start_heap_profiler() {
     log_info "jemalloc profiling enabled (dumps → $DUMP_DIR)"
     if ! command -v jeprof >/dev/null 2>&1 || ! command -v dot >/dev/null 2>&1; then
-        log_info "jeprof or dot not found, heap GIF conversion disabled."
+        log_info "jeprof or dot not found, heap dump conversion disabled."
         return
     fi
+
+    resolve_jeprof_formats
+    log_info "jeprof report formats:$JEPROF_FORMATS"
 
     diff_enabled=false
     if dprop_enabled diff; then
         diff_enabled=true
-        log_info "jeprof diff GIFs enabled"
+        log_info "jeprof diff reports enabled"
     fi
 
     keep=$(extract_dprop keep)
@@ -63,12 +98,12 @@ start_heap_profiler() {
             for heap_file in $(list_heap_dumps); do
                 name=${heap_file##*/}
                 if [ ! -f "$DUMP_DIR/output/.done/$name" ]; then
-                    if render_gif "$java_bin" "$heap_file" > "$DUMP_DIR/output/$name.gif"; then
+                    if render_reports "$DUMP_DIR/output/$name" "$java_bin" "$heap_file"; then
                         : > "$DUMP_DIR/output/.done/$name" || true
                     fi
                     if [ "$diff_enabled" = true ] && [ -f "$previous" ] \
                         && [ "$(run_id "$previous")" = "$(run_id "$heap_file")" ]; then
-                        render_gif --base="$previous" "$java_bin" "$heap_file" > "$DUMP_DIR/output/$name.diff.gif"
+                        render_reports "$DUMP_DIR/output/$name.diff" --base="$previous" "$java_bin" "$heap_file"
                     fi
                 fi
                 previous=$heap_file
