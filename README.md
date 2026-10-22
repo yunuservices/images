@@ -8,6 +8,8 @@
 - `temurin`: `17`, `21`, `25`, `27`
 - `graalvm`: `17`, `21`, `25`
 
+*Only LTS and the latest JDK versions are available.*
+
 ## Verifying images
 Every tag is signed with keyless [cosign](https://github.com/sigstore/cosign) from GitHub Actions:
 
