@@ -133,6 +133,88 @@ else
     fail "nativemem recording converted"
 fi
 
+# A Sectigo cross-sign of one of the compromised eMudhra intermediates
+# (CVE-2026-91403) must be rejected even by the root that issued it.
+cat > /tmp/Blocked.java <<'EOF_JAVA'
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Set;
+
+class Blocked {
+    // EM DV TLS CA - G3B, one of the compromised intermediates.
+    static final String INTERMEDIATE = """
+        -----BEGIN CERTIFICATE-----
+        MIIDaDCCAu6gAwIBAgIQAKSu5njyM2K0wORgt3LyFDAKBggqhkjOPQQDAzBWMQsw
+        CQYDVQQGEwJJTjElMCMGA1UECgwcZU11ZGhyYSBUZWNobm9sb2dpZXMgTGltaXRl
+        ZDEgMB4GA1UEAwwXZW1TaWduIFJvb3QgVExTIENBIC0gRzMwHhcNMjUwNDMwMTU1
+        NDA4WhcNNDAwNDI4MTgzMDAwWjA/MQswCQYDVQQGEwJOTDETMBEGA1UECgwKZU11
+        ZGhyYSBCVjEbMBkGA1UEAwwSRU0gRFYgVExTIENBIC0gRzNCMHYwEAYHKoZIzj0C
+        AQYFK4EEACIDYgAE557ZwEqXc8RzXlERHahawr1eZKs3S4DhLLwgOOweTw47gS/J
+        hZ4eZ6+wTi+LyX90hbplqpEe6KTkW2LVzAPVa+Z4s8OMtNyTfKJGDiOEU8iSk10p
+        1E+R4VYGtjzO2rRoo4IBljCCAZIwHwYDVR0jBBgwFoAU4TqrIXzx401UrtRyt/2L
+        WUIgkFQwHQYDVR0OBBYEFOIeL+ccGTkOVUtiwSAkVzUkiiUUMB0GA1UdJQQWMBQG
+        CCsGAQUFBwMBBggrBgEFBQcDAjBdBgNVHSAEVjBUMDkGCysGAQQBg44hAQABMCow
+        KAYIKwYBBQUHAgEWHGh0dHA6Ly9yZXBvc2l0b3J5LmVtc2lnbi5jb20wDQYLKwYB
+        BAGDjiEBAmQwCAYGZ4EMAQIBMHUGCCsGAQUFBwEBBGkwZzAkBggrBgEFBQcwAYYY
+        aHR0cDovL29jc3AtYi5lbXNpZ24uY29tMD8GCCsGAQUFBzAChjNodHRwOi8vcmVw
+        b3NpdG9yeS5lbXNpZ24uY29tL2NlcnRzL0VNRFZUTFNDQUczQi5wN2MwNwYDVR0f
+        BDAwLjAsoCqgKIYmaHR0cDovL2NybC5lbXNpZ24uY29tLz9yb290dGxzY2FnMy5j
+        cmwwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQAwCgYIKoZIzj0E
+        AwMDaAAwZQIwLmsGXi6oFMJ2klkcEMXMug6gvxQWZWkewiDWVzQyl2L6z6DuQfPO
+        Ibh1grvdULDCAjEAxZvLlxUavG69J6wnSjC8XBbqNIQsJ6CE2QdNOe84Ptxb6VG8
+        gt2TlfJbHii+KNvK
+        -----END CERTIFICATE-----
+        """;
+
+    // emSign Root TLS CA - G3, the root that issued it.
+    static final String ROOT = """
+        -----BEGIN CERTIFICATE-----
+        MIICKTCCAa+gAwIBAgIQDnYGcvFDRZ/I/gqwvAXjlDAKBggqhkjOPQQDAzBWMQsw
+        CQYDVQQGEwJJTjElMCMGA1UECgwcZU11ZGhyYSBUZWNobm9sb2dpZXMgTGltaXRl
+        ZDEgMB4GA1UEAwwXZW1TaWduIFJvb3QgVExTIENBIC0gRzMwHhcNMjQwMjA4MDgx
+        OTMyWhcNNDkwMjA3MDgxOTMyWjBWMQswCQYDVQQGEwJJTjElMCMGA1UECgwcZU11
+        ZGhyYSBUZWNobm9sb2dpZXMgTGltaXRlZDEgMB4GA1UEAwwXZW1TaWduIFJvb3Qg
+        VExTIENBIC0gRzMwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAARfD9w/q1cWxL6D9bMG
+        H6CQ4u+gAV6GN9s+PwQx9Bl4hC+0iU8QOk8mWO/RwXQy10DCSxT8vSIJClHKp+Ao
+        4qJKdYeV0SwZ7LMQziyLfxIUOY6Grja/sQFwLKYf8EdDXAyjQjBAMB0GA1UdDgQW
+        BBThOqshfPHjTVSu1HK3/YtZQiCQVDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/
+        BAUwAwEB/zAKBggqhkjOPQQDAwNoADBlAjBhCFTkly7Yl7+s4hiw+k6ZJTXT2AiI
+        rvmsmfqPr5E7ecwXb6kXA5LTFd6rjwTuV3sCMQC9w6ZSbVq1mveMO6dKFziOzClT
+        KCT2RFT6yXtq6nzgRICgBmiXbJAXsmZ8yAwjyWc=
+        -----END CERTIFICATE-----
+        """;
+
+    public static void main(String[] args) throws Exception {
+        var factory = CertificateFactory.getInstance("X.509");
+        var intermediate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(INTERMEDIATE.getBytes()));
+        var root = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(ROOT.getBytes()));
+        var params = new PKIXParameters(Set.of(new TrustAnchor(root, null)));
+        params.setRevocationEnabled(false);
+        try {
+            CertPathValidator.getInstance("PKIX").validate(factory.generateCertPath(List.of(intermediate)), params);
+        } catch (CertPathValidatorException e) {
+            if (String.valueOf(e.getMessage()).startsWith("Untrusted certificate")) {
+                return;
+            }
+            throw e;
+        }
+        throw new IllegalStateException("the compromised intermediate still validates");
+    }
+}
+EOF_JAVA
+if output=$(java /tmp/Blocked.java 2>&1); then
+    pass "compromised eMudhra intermediates blocked"
+else
+    fail "compromised eMudhra intermediates blocked"
+    printf '%s\n' "$output"
+fi
+
 # Runs a single-file program that fills the heap until it fails.
 cat > /tmp/Oom.java <<'EOF_JAVA'
 class Oom {

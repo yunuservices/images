@@ -21,6 +21,15 @@ fi
 
 if command -v ldconfig >/dev/null 2>&1; then ldconfig || true; fi
 
+# CVE-2026-91403: block the compromised eMudhra intermediates and their
+# Sectigo cross-signs until every vendor ships a JDK that does.
+java_home=$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")
+blocked="$java_home/lib/security/blocked.certs"
+[ -f "$blocked" ] || echo "Algorithm=SHA-256" > "$blocked"
+grep -qx 'Algorithm=SHA-256' "$blocked"
+[ -z "$(tail -c 1 "$blocked")" ] || echo >> "$blocked"
+grep -v '^Algorithm=' /tmp/emudhra-blocked.certs | grep -vxF -f "$blocked" >> "$blocked" || true
+
 mkdir -p /home/container
 if command -v useradd >/dev/null 2>&1; then
     useradd -d /home/container -m -u 1000 container || true
