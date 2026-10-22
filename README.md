@@ -2,10 +2,10 @@
 
 ## Supported Vendors and Versions
 - Format: `ghcr.io/yunuservices/images:{VENDOR}_{VERSION}`
-- `corretto`: `17`, `21`, `25`, `26`, `27`
-- `zulu`: `17`, `21`, `25`, `26`
-- `liberica`: `17`, `21`, `25`, `26`, `27`
-- `temurin`: `17`, `21`, `25`, `26`, `27`
+- `corretto`: `17`, `21`, `25`, `27`
+- `zulu`: `17`, `21`, `25`
+- `liberica`: `17`, `21`, `25`, `27`
+- `temurin`: `17`, `21`, `25`, `27`
 - `graalvm`: `17`, `21`, `25`
 
 ## Verifying images
