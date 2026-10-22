@@ -8,7 +8,7 @@ JEMALLOC_VERSION=5.4.0
 # renovate: datasource=github-tags depName=microsoft/mimalloc
 MIMALLOC_VERSION=v3.5.3
 # renovate: datasource=github-tags depName=gperftools/gperftools
-GPERFTOOLS_VERSION=2.18.1
+GPERFTOOLS_VERSION=2.19.1
 # renovate: datasource=github-releases depName=async-profiler/async-profiler
 ASYNC_PROFILER_VERSION=4.5
 ASYNC_PROFILER_SHA256_X64=89546fbb9ee0fc5496c7edd4099b0709489bc78b0d8057ccbb4b801f6b032b62
