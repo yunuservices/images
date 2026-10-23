@@ -133,8 +133,9 @@ else
     fail "nativemem recording converted"
 fi
 
-# A Sectigo cross-sign of one of the compromised eMudhra intermediates
-# (CVE-2026-91403) must be rejected even by the root that issued it.
+# Both copies of one of the compromised eMudhra intermediates (CVE-2026-91403)
+# must be rejected even by the root that issued them: the one eMudhra signed
+# and the cross-sign that chains to AAA Certificate Services.
 cat > /tmp/Blocked.java <<'EOF_JAVA'
 import java.io.ByteArrayInputStream;
 import java.security.cert.CertPathValidator;
@@ -147,8 +148,8 @@ import java.util.List;
 import java.util.Set;
 
 class Blocked {
-    // EM DV TLS CA - G3B, one of the compromised intermediates.
-    static final String INTERMEDIATE = """
+    // EM DV TLS CA - G3B, signed by emSign Root TLS CA - G3.
+    static final String DIRECT = """
         -----BEGIN CERTIFICATE-----
         MIIDaDCCAu6gAwIBAgIQAKSu5njyM2K0wORgt3LyFDAKBggqhkjOPQQDAzBWMQsw
         CQYDVQQGEwJJTjElMCMGA1UECgwcZU11ZGhyYSBUZWNobm9sb2dpZXMgTGltaXRl
@@ -172,8 +173,8 @@ class Blocked {
         -----END CERTIFICATE-----
         """;
 
-    // emSign Root TLS CA - G3, the root that issued it.
-    static final String ROOT = """
+    // emSign Root TLS CA - G3.
+    static final String DIRECT_ROOT = """
         -----BEGIN CERTIFICATE-----
         MIICKTCCAa+gAwIBAgIQDnYGcvFDRZ/I/gqwvAXjlDAKBggqhkjOPQQDAzBWMQsw
         CQYDVQQGEwJJTjElMCMGA1UECgwcZU11ZGhyYSBUZWNobm9sb2dpZXMgTGltaXRl
@@ -190,21 +191,86 @@ class Blocked {
         -----END CERTIFICATE-----
         """;
 
+    // EM DV TLS CA - G3B, cross-signed by AAA Certificate Services.
+    static final String CROSS_SIGN = """
+        -----BEGIN CERTIFICATE-----
+        MIIDzjCCAragAwIBAgIRAKAk/fS6Zlx4XOSgIEg4WLcwDQYJKoZIhvcNAQELBQAw
+        ezELMAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4G
+        A1UEBwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExpbWl0ZWQxITAfBgNV
+        BAMMGEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczAeFw0yNTA1MTQwMDAwMDBaFw0y
+        ODEyMzEyMzU5NTlaMD8xCzAJBgNVBAYTAk5MMRMwEQYDVQQKDAplTXVkaHJhIEJW
+        MRswGQYDVQQDDBJFTSBEViBUTFMgQ0EgLSBHM0IwdjAQBgcqhkjOPQIBBgUrgQQA
+        IgNiAATnntnASpdzxHNeUREdqFrCvV5kqzdLgOEsvCA47B5PDjuBL8mFnh5nr7BO
+        L4vJf3SFumWqkR7opORbYtXMA9Vr5nizw4y03JN8okYOI4RTyJKTXSnUT5HhVga2
+        PM7atGijggE1MIIBMTAfBgNVHSMEGDAWgBSgEQojPpbxB+zirynvgqV/0DCktDAd
+        BgNVHQ4EFgQU4h4v5xwZOQ5VS2LBICRXNSSKJRQwDgYDVR0PAQH/BAQDAgEGMBIG
+        A1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC
+        MDEGA1UdIAQqMCgwCAYGZ4EMAQIBMA0GCysGAQQBg44hAQABMA0GCysGAQQBg44h
+        AQJkMEMGA1UdHwQ8MDowOKA2oDSGMmh0dHA6Ly9jcmwuY29tb2RvY2EuY29tL0FB
+        QUNlcnRpZmljYXRlU2VydmljZXMuY3JsMDQGCCsGAQUFBwEBBCgwJjAkBggrBgEF
+        BQcwAYYYaHR0cDovL29jc3AuY29tb2RvY2EuY29tMA0GCSqGSIb3DQEBCwUAA4IB
+        AQBzQ1IoqpdotM6gFrR4Q3YrKifOLeaj5XXunldpVE/vZn2TxC2y0s8oYiLR5ICE
+        wqVXSB7N6BM1Mp+Nif7Jbhb2IswAfSR4Iik8+B0iRmi7lYoNlycCgHjmsjOmZaxM
+        QkPmjXAJbG5f4V41OsvJZmS7lI3r0IuvEDVX3GAZ13on6IImSs9ybNpHQ7NCqkMQ
+        7wH4uAO1dtpFycgJSdHaCOhHjrox2BTYGLdpUrYwY3EOAjlZ8UGgsxs7mG+xquMl
+        bN1LFURwfnkVMP3T/DBIZ/ys2+lNFyxK3FlArrV4/000uTnVB1lO8oGORYdXoT5V
+        GUyRCEIDhF5TBUuKF4E3kf1h
+        -----END CERTIFICATE-----
+        """;
+
+    // AAA Certificate Services.
+    static final String CROSS_SIGN_ROOT = """
+        -----BEGIN CERTIFICATE-----
+        MIIEMjCCAxqgAwIBAgIBATANBgkqhkiG9w0BAQUFADB7MQswCQYDVQQGEwJHQjEb
+        MBkGA1UECAwSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYDVQQHDAdTYWxmb3JkMRow
+        GAYDVQQKDBFDb21vZG8gQ0EgTGltaXRlZDEhMB8GA1UEAwwYQUFBIENlcnRpZmlj
+        YXRlIFNlcnZpY2VzMB4XDTA0MDEwMTAwMDAwMFoXDTI4MTIzMTIzNTk1OVowezEL
+        MAkGA1UEBhMCR0IxGzAZBgNVBAgMEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UE
+        BwwHU2FsZm9yZDEaMBgGA1UECgwRQ29tb2RvIENBIExpbWl0ZWQxITAfBgNVBAMM
+        GEFBQSBDZXJ0aWZpY2F0ZSBTZXJ2aWNlczCCASIwDQYJKoZIhvcNAQEBBQADggEP
+        ADCCAQoCggEBAL5AnfRu4ep2hxxNRUSOvkbIgwadwSr+GB+O5AL686tdUIoWMQua
+        BtDFcCLNSS1UY8y2bmhGC1Pqy0wkwLxyTurxFa70VJoSCsN6sjNg4tqJVfMiWPPe
+        3M/vg4aijJRPn2jymJBGhCfHdr/jzDUsi14HZGWCwEiwqJH5YZ92IFCokcdmtet4
+        YgNW8IoaE+oxox6gmf049vYnMlhvB/VruPsUK6+3qszWY19zjNoFmag4qMsXeDZR
+        rOme9Hg6jc8P2ULimAyrL58OAd7vn5lJ8S3frHRNG5i1R8XlKdH5kBjHYpy+g8cm
+        ez6KJcfA3Z3mNWgQIJ2P2N7Sw4ScDV7oL8kCAwEAAaOBwDCBvTAdBgNVHQ4EFgQU
+        oBEKIz6W8Qfs4q8p74Klf9AwpLQwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQF
+        MAMBAf8wewYDVR0fBHQwcjA4oDagNIYyaHR0cDovL2NybC5jb21vZG9jYS5jb20v
+        QUFBQ2VydGlmaWNhdGVTZXJ2aWNlcy5jcmwwNqA0oDKGMGh0dHA6Ly9jcmwuY29t
+        b2RvLm5ldC9BQUFDZXJ0aWZpY2F0ZVNlcnZpY2VzLmNybDANBgkqhkiG9w0BAQUF
+        AAOCAQEACFb8AvCb6P+k+tZ7xkSAzk/ExfYAWMymtrwUSWgEdujm7l3sAg9g1o1Q
+        GE8mTgHj5rCl7r+8dFRBv/38ErjHT1r0iWAFf2C3BUrz9vHCv8S5dIa2LX1rzNLz
+        Rt0vxuBqw8M0Ayx9lt1awg6nCpnBBYurDC/zXDrPbDdVCYfeU0BsWO/8tqtlbgT2
+        G9w84FoVxp7Z8VlIMCFlA2zs6SFz7JsDoeA3raAVGI/6ugLOpyypEBMs1OUIJqsi
+        l2D4kF501KKaU73yqWjgom7C12yxow+ev+to51byrvLjKzg6CYG1a4XXvi3tPxq3
+        smPi9WIsgtRqAEFQ8TmDn5XpNpaYbg==
+        -----END CERTIFICATE-----
+        """;
+
     public static void main(String[] args) throws Exception {
+        boolean trusted = !isBlocked("direct", DIRECT, DIRECT_ROOT);
+        trusted |= !isBlocked("cross-sign", CROSS_SIGN, CROSS_SIGN_ROOT);
+        if (trusted) {
+            System.exit(1);
+        }
+    }
+
+    static boolean isBlocked(String name, String intermediatePem, String rootPem) throws Exception {
         var factory = CertificateFactory.getInstance("X.509");
-        var intermediate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(INTERMEDIATE.getBytes()));
-        var root = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(ROOT.getBytes()));
+        var intermediate = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(intermediatePem.getBytes()));
+        var root = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(rootPem.getBytes()));
         var params = new PKIXParameters(Set.of(new TrustAnchor(root, null)));
         params.setRevocationEnabled(false);
         try {
             CertPathValidator.getInstance("PKIX").validate(factory.generateCertPath(List.of(intermediate)), params);
         } catch (CertPathValidatorException e) {
             if (String.valueOf(e.getMessage()).startsWith("Untrusted certificate")) {
-                return;
+                return true;
             }
             throw e;
         }
-        throw new IllegalStateException("the compromised intermediate still validates");
+        System.out.println(name + ": the compromised intermediate still validates");
+        return false;
     }
 }
 EOF_JAVA
@@ -213,6 +279,35 @@ if output=$(java /tmp/Blocked.java 2>&1); then
 else
     fail "compromised eMudhra intermediates blocked"
     printf '%s\n' "$output"
+fi
+
+# curl, git and openssl use the system bundle, which must not trust
+# emSign ECC Root CA - G3 either.
+cat > /tmp/emsign-ecc-root-ca-g3.pem <<'EOF_PEM'
+-----BEGIN CERTIFICATE-----
+MIICTjCCAdOgAwIBAgIKPPYHqWhwDtqLhDAKBggqhkjOPQQDAzBrMQswCQYDVQQG
+EwJJTjETMBEGA1UECxMKZW1TaWduIFBLSTElMCMGA1UEChMcZU11ZGhyYSBUZWNo
+bm9sb2dpZXMgTGltaXRlZDEgMB4GA1UEAxMXZW1TaWduIEVDQyBSb290IENBIC0g
+RzMwHhcNMTgwMjE4MTgzMDAwWhcNNDMwMjE4MTgzMDAwWjBrMQswCQYDVQQGEwJJ
+TjETMBEGA1UECxMKZW1TaWduIFBLSTElMCMGA1UEChMcZU11ZGhyYSBUZWNobm9s
+b2dpZXMgTGltaXRlZDEgMB4GA1UEAxMXZW1TaWduIEVDQyBSb290IENBIC0gRzMw
+djAQBgcqhkjOPQIBBgUrgQQAIgNiAAQjpQy4LRL1KPOxst3iAhKAnjlfSU2fySU0
+WXTsuwYc58Byr+iuL+FBVIcUqEqy6HyC5ltqtdyzdc6LBtCGI79G1Y4PPwT01xyS
+fvalY8L1X44uT6EYGQIrMgqCZH0Wk9GjQjBAMB0GA1UdDgQWBBR8XQKEE9TMipuB
+zhccLikenEhjQjAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAKBggq
+hkjOPQQDAwNpADBmAjEAvvNhzwIQHWSVB7gYboiFBS+DCBeQyh+KTOgNG3qxrdWB
+CUfvO6wIBHxcmbHtRwfSAjEAnbpV/KlK6O3t5nYBQnvI+GDZjVGLVTv7jHvrZQnD
++JbNR6iC8hZVdyR+EhCVBCyj
+-----END CERTIFICATE-----
+EOF_PEM
+system_bundle=""
+for bundle in /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/ca-certificates.crt; do
+    [ -f "$bundle" ] && system_bundle=$bundle && break
+done
+if [ -n "$system_bundle" ] && ! openssl verify -CAfile "$system_bundle" /tmp/emsign-ecc-root-ca-g3.pem >/dev/null 2>&1; then
+    pass "system trust store drops emSign ECC Root CA - G3"
+else
+    fail "system trust store drops emSign ECC Root CA - G3"
 fi
 
 # Runs a single-file program that fills the heap until it fails.

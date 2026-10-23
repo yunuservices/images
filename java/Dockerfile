@@ -22,8 +22,8 @@ COPY --from=allocators /libtcmalloc_minimal.so /usr/local/lib/libtcmalloc_minima
 COPY --from=allocators --chmod=0755 /async-profiler /opt/async-profiler
 
 COPY build/runtime-setup.sh /usr/local/bin/runtime-setup.sh
-COPY build/emudhra-blocked.certs /tmp/emudhra-blocked.certs
-RUN sh /usr/local/bin/runtime-setup.sh && rm -f /usr/local/bin/runtime-setup.sh /tmp/emudhra-blocked.certs
+COPY build/emudhra-blocked.certs build/emsign-ecc-root-ca-g3.pem /tmp/
+RUN sh /usr/local/bin/runtime-setup.sh && rm -f /usr/local/bin/runtime-setup.sh /tmp/emudhra-blocked.certs /tmp/emsign-ecc-root-ca-g3.pem
 
 USER 1000:1000
 ENV USER=container HOME=/home/container
