@@ -23,6 +23,8 @@ Each build run also lists fixable HIGH and CRITICAL vulnerabilities per image in
 
 All tags are rebuilt every Monday at 04:00 UTC, so security updates of the base images reach the tags without a new commit.
 
+The images set `JAVA_TOOL_OPTIONS=-XX:-UseBASE64Intrinsics` as a temporary mitigation for CVE-2026-114938. If you supply your own `JAVA_TOOL_OPTIONS`, include `-XX:-UseBASE64Intrinsics` to keep the mitigation active.
+
 ## Runtime Switches
 Startup switches are passed as JVM system properties. They can be combined unless noted otherwise.
 

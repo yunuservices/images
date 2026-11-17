@@ -25,6 +25,9 @@ COPY build/runtime-setup.sh /usr/local/bin/runtime-setup.sh
 COPY build/emudhra-blocked.certs build/emsign-ecc-root-ca-g3.pem /tmp/
 RUN sh /usr/local/bin/runtime-setup.sh && rm -f /usr/local/bin/runtime-setup.sh /tmp/emudhra-blocked.certs /tmp/emsign-ecc-root-ca-g3.pem
 
+# CVE-2026-114938: disable Base64 intrinsics until all base images are patched.
+ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
+
 USER 1000:1000
 ENV USER=container HOME=/home/container
 WORKDIR /home/container

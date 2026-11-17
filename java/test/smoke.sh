@@ -86,6 +86,13 @@ check_startup tcmalloc "Using allocator: tcmalloc" java -Dtcmalloc=true -version
 check_startup nmt "native memory tracking enabled" java -Dnmt=true -version
 check_startup arenas "at most 2 arenas" java -Darenas=2 -version
 
+if flags=$(java -XX:+PrintFlagsFinal -version 2>&1) \
+    && printf '%s\n' "$flags" | grep -Eq '^[[:space:]]*bool[[:space:]]+UseBASE64Intrinsics[[:space:]]+=[[:space:]]+false[[:space:]]+.*\{environment\}'; then
+    pass "Base64 intrinsics disabled by the image (CVE-2026-114938)"
+else
+    fail "Base64 intrinsics disabled by the image (CVE-2026-114938)"
+fi
+
 # A 1 MiB dump interval and a final dump make a short-lived JVM write heap profiles.
 export MALLOC_CONF=lg_prof_interval:20,prof_final:true
 check_startup dump "jemalloc profiling enabled" java -Ddump=true -version
