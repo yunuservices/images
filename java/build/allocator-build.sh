@@ -6,7 +6,7 @@ set -eux
 # renovate: datasource=github-tags depName=jemalloc/jemalloc
 JEMALLOC_VERSION=5.4.0
 # renovate: datasource=github-tags depName=microsoft/mimalloc
-MIMALLOC_VERSION=v3.7.0
+MIMALLOC_VERSION=v3.7.1
 # renovate: datasource=github-tags depName=gperftools/gperftools
 GPERFTOOLS_VERSION=2.19.3
 # renovate: datasource=github-releases depName=async-profiler/async-profiler
