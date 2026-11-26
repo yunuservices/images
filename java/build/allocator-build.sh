@@ -11,8 +11,8 @@ MIMALLOC_VERSION=v3.7.1
 GPERFTOOLS_VERSION=2.19.3
 # renovate: datasource=github-releases depName=async-profiler/async-profiler
 ASYNC_PROFILER_VERSION=4.6
-ASYNC_PROFILER_SHA256_X64=89546fbb9ee0fc5496c7edd4099b0709489bc78b0d8057ccbb4b801f6b032b62
-ASYNC_PROFILER_SHA256_ARM64=64c41d1465d60097439c50d7e924b4946f1f62b1cbd21ce5b034fad09c0d6979
+ASYNC_PROFILER_SHA256_X64=1e79ed54d8952889a2e74f993d22ee925e3322460d4f37a2ed95bfb88585da36
+ASYNC_PROFILER_SHA256_ARM64=e9e26d2aae0d2935a0a676342c2e4612076ef15f04788c82f965d408a6659fbb
 
 dnf install -y ca-certificates git tar gzip findutils gcc gcc-c++ make autoconf automake libtool cmake libatomic
 dnf clean all
